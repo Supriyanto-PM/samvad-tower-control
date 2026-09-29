@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Samvad NOC & PMO Control Tower - Timor-Leste 100 Sites</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 p-4 md:p-6 min-h-screen">
+  <!-- Top Navigation & Live Server Status -->
+  <header class="border-b border-slate-800 pb-4 mb-5">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">📡</span>
+          <h1 class="text-xl md:text-2xl font-black tracking-tight text-white uppercase">SAMVAD NOC CONTROL TOWER</h1>
+          <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs px-2.5 py-0.5 rounded-full font-bold">Timor-Leste 100 Sites</span>
+        </div>
+        <p class="text-xs md:text-sm text-slate-400 mt-1">
+          National PaaS Delivery Blueprint &bull; Origin: <strong class="text-sky-300">Port Dili Terminal (-8.5520, 125.5711)</strong> &bull; PMO Lead: <strong class="text-slate-200">Supriyanto</strong>
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <a href="http://localhost:8501" target="_blank" rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 shadow transition-all">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Localhost (This PC)</span>
+        </a>
+        <a href="http://10.101.0.236:8501" target="_blank" rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow transition-all">
+          <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+          <span>Wi-Fi / LAN: 10.101.0.236:8501 (Other Laptops)</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        </a>
+        <a href="https://being-array-cornell-basin.trycloudflare.com" target="_blank" rel="noopener noreferrer" 
+           class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow transition-all">
+          <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+          <span>Public Internet (HTTPS)</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex flex-wrap gap-2 mt-4 border-t border-slate-800/80 pt-3">
+      <button onclick="switchTab('wallboard')" id="tab-btn-wallboard" class="tab-btn active px-3.5 py-1.5 rounded-md text-xs font-semibold bg-blue-600 text-white">
+        🖥️ NOC Control Tower (100 Sites &amp; Distances)
+      </button>
+      <button onclick="switchTab('plan')" id="tab-btn-plan" class="tab-btn px-3.5 py-1.5 rounded-md text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white">
+        📅 PLAN (12-Month Cadence &amp; Forward Hubs)
+      </button>
+      <button onclick="switchTab('update')" id="tab-btn-update" class="tab-btn px-3.5 py-1.5 rounded-md text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white">
+        ⚡ UPDATE (Master Excel Sync &amp; Field Actions)
+      </button>
+      <button onclick="switchTab('report')" id="tab-btn-report" class="tab-btn px-3.5 py-1.5 rounded-md text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white">
+        📄 REPORT (Friday 14:00 Auto-Run &amp; I&amp;C)
+      </button>
+    </div>
+  </header>
+
+  <!-- TAB 1: NOC CONTROL TOWER -->
+  <main id="tab-wallboard" class="tab-content block space-y-5">
+    <!-- Executive Health Card -->
+    <div class="rounded-xl p-4 md:p-5 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 shadow">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <div>
+          <span class="text-xs uppercase font-bold text-sky-400 tracking-wider">Executive KPI Health &bull; 100-Site Timor-Leste Rollout</span>
+          <h2 class="text-xl md:text-2xl font-black text-white mt-0.5">🌟 Tier 1: Maximum 120% Performance Tier</h2>
+          <p class="text-xs text-slate-300 mt-1 max-w-2xl">
+            100 sites categorized by Priority Index (P0–P3), accessible route distances from Port Dili, power resilience gaps (57 No DG, 34 0h backup), and 4 Extreme mountain sites.
+          </p>
+        </div>
+        <div class="bg-slate-900 border border-emerald-500/40 rounded-xl p-3 text-center min-w-[160px]">
+          <div class="text-2xl md:text-3xl font-black text-emerald-400">118.8%</div>
+          <div class="text-[11px] font-semibold text-emerald-300/90 mt-0.5">Composite Score</div>
+          <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded mt-1 inline-block">120% Tier Met</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 Key Baseline Metrics (Blueprint Page 1-3) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+        <div class="text-xs text-slate-400">Total Portfolio</div>
+        <div class="text-xl font-black text-white mt-1">100 Sites</div>
+        <span class="text-[10px] text-sky-400 font-mono">11 Districts</span>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+        <div class="text-xs text-slate-400">Q1 Critical</div>
+        <div class="text-xl font-black text-rose-400 mt-1">42 Sites</div>
+        <span class="text-[10px] text-rose-400 font-mono">Primary Priority</span>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+        <div class="text-xs text-slate-400">Without DG</div>
+        <div class="text-xl font-black text-amber-400 mt-1">57 Sites</div>
+        <span class="text-[10px] text-amber-400 font-mono">Power Fragile</span>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+        <div class="text-xs text-slate-400">Zero-Hour Backup</div>
+        <div class="text-xl font-black text-rose-400 mt-1">34 Sites</div>
+        <span class="text-[10px] text-rose-400 font-mono">High Outage Risk</span>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+        <div class="text-xs text-slate-400">Dili Cluster</div>
+        <div class="text-xl font-black text-blue-400 mt-1">63 Sites</div>
+        <span class="text-[10px] text-blue-400 font-mono">63% Portfolio (Wave 1)</span>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+        <div class="text-xs text-slate-400">Extreme Sites</div>
+        <div class="text-xl font-black text-purple-400 mt-1">4 Sites</div>
+        <span class="text-[10px] text-purple-400 font-mono">Mountain / Weather</span>
+      </div>
+    </div>
+
+    <!-- Interactive Leaflet GIS Map Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow space-y-3">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span>🗺️ Geographic Wallboard: 100 Telecom Sites & Distance from Port Dili</span>
+          </h3>
+          <p class="text-xs text-slate-400">Interactive GIS Map with OpenStreetMap tiles. Click any marker to view real road/ferry transit routes from Port Dili.</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs font-mono">
+          <span class="text-slate-400">Tiles:</span>
+          <button onclick="setTileLayer('osm')" id="btn-tile-osm" class="px-2 py-0.5 rounded bg-blue-600 text-white font-bold">OpenStreetMap</button>
+          <button onclick="setTileLayer('dark')" id="btn-tile-dark" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300">Carto Dark</button>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div id="timor-leaflet-map" class="w-full h-[460px] rounded-lg border border-slate-800 z-0"></div>
+
+      <!-- Map Legend -->
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-[11px]">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> P0 | Immediate (Critical)</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> P1 | Early Wave</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> P2 | Planned</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-500 inline-block"></span> P3 | Monitor</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="flex items-center gap-1.5 font-bold text-emerald-400">⚓ Port Dili Origin</span>
+          <span class="flex items-center gap-1.5 font-bold text-amber-300">🏢 Forward Hubs</span>
+          <span class="flex items-center gap-1.5 text-purple-400 font-mono">🚢 Ferry Corridors</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accessible Road & Maritime Route Distances from Port Dili Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <span>⚓ Operational Distance Matrix from Port Dili (-8.5520, 125.5711)</span>
+          </h3>
+          <p class="text-xs text-slate-400">Accurately calculated using real road networks, mountain corridors, and maritime ferry crossings.</p>
+        </div>
+        <span class="text-xs bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded font-mono">Sorted by Distance</span>
+      </div>
+
+      <div class="overflow-x-auto max-h-[380px] overflow-y-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="sticky top-0 bg-slate-950 text-slate-300 border-b border-slate-800">
+            <tr>
+              <th class="py-2.5 px-3">Site ID</th>
+              <th class="py-2.5 px-3">Site Name</th>
+              <th class="py-2.5 px-3">District</th>
+              <th class="py-2.5 px-3 font-semibold text-sky-400">Route Dist from Port Dili</th>
+              <th class="py-2.5 px-3">Est. Transit Time</th>
+              <th class="py-2.5 px-3">Transport Mode</th>
+              <th class="py-2.5 px-3">Forward Hub</th>
+              <th class="py-2.5 px-3">Priority Tier</th>
+              <th class="py-2.5 px-3">Quadrant</th>
+              <th class="py-2.5 px-3">Power Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/80 text-slate-300 font-mono">
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">VCU004</td>
+              <td class="py-2 px-3 text-slate-200">Dili Port (Origin)</td>
+              <td class="py-2 px-3">Dili</td>
+              <td class="py-2 px-3 text-emerald-400 font-bold">2.5 km</td>
+              <td class="py-2 px-3">15 mins</td>
+              <td class="py-2 px-3 text-slate-400">Paved Urban Road</td>
+              <td class="py-2 px-3 text-sky-300">Central Staging Dili</td>
+              <td class="py-2 px-3"><span class="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-[10px]">P2 | Planned</span></td>
+              <td class="py-2 px-3">Q3-Monitor</td>
+              <td class="py-2 px-3 text-amber-400">0h &bull; DG</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">DAX025</td>
+              <td class="py-2 px-3 text-slate-200">Markoni</td>
+              <td class="py-2 px-3">Dili</td>
+              <td class="py-2 px-3 text-emerald-400 font-bold">2.5 km</td>
+              <td class="py-2 px-3">15 mins</td>
+              <td class="py-2 px-3 text-slate-400">Paved Urban Road</td>
+              <td class="py-2 px-3 text-sky-300">Central Staging Dili</td>
+              <td class="py-2 px-3"><span class="bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded text-[10px]">P0 | Immediate</span></td>
+              <td class="py-2 px-3 text-rose-400">Q1-Critical</td>
+              <td class="py-2 px-3 text-rose-400">2h &bull; No DG</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">ATU002</td>
+              <td class="py-2 px-3 text-slate-200">Atauro Island</td>
+              <td class="py-2 px-3">Dili</td>
+              <td class="py-2 px-3 text-purple-400 font-bold">36.5 km</td>
+              <td class="py-2 px-3 text-purple-300">1.5 - 2.0 hrs (Sea)</td>
+              <td class="py-2 px-3 text-purple-300">Maritime Ferry / Speedboat</td>
+              <td class="py-2 px-3 text-sky-300">Port Dili Sea Terminal</td>
+              <td class="py-2 px-3"><span class="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-[10px]">P2 | Planned</span></td>
+              <td class="py-2 px-3">Q3-Monitor</td>
+              <td class="py-2 px-3 text-rose-400">0h &bull; No DG</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">BAZ004</td>
+              <td class="py-2 px-3 text-slate-200">Fatunia</td>
+              <td class="py-2 px-3">Liquisa</td>
+              <td class="py-2 px-3 text-emerald-400 font-bold">25.0 km</td>
+              <td class="py-2 px-3">45 mins</td>
+              <td class="py-2 px-3 text-slate-400">West Coast Highway</td>
+              <td class="py-2 px-3 text-sky-300">Central Staging Dili</td>
+              <td class="py-2 px-3"><span class="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-[10px]">P2 | Planned</span></td>
+              <td class="py-2 px-3">Q3-Monitor</td>
+              <td class="py-2 px-3 text-slate-400">1h &bull; DG</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">LET003</td>
+              <td class="py-2 px-3 text-slate-200">Ducurai (Extreme)</td>
+              <td class="py-2 px-3">Ermera</td>
+              <td class="py-2 px-3 text-amber-400 font-bold">53.8 km</td>
+              <td class="py-2 px-3 text-amber-300">3.5 hrs (4x4)</td>
+              <td class="py-2 px-3 text-amber-300">Mountain Spine Switchbacks</td>
+              <td class="py-2 px-3 text-sky-300">Dili / Gleno Post</td>
+              <td class="py-2 px-3"><span class="bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded text-[10px]">P0 | Immediate</span></td>
+              <td class="py-2 px-3 text-rose-400">Q1-Critical</td>
+              <td class="py-2 px-3 text-rose-400">0.5h &bull; No DG</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">BAU008</td>
+              <td class="py-2 px-3 text-slate-200">Gariuri</td>
+              <td class="py-2 px-3">Baucau</td>
+              <td class="py-2 px-3 text-amber-400 font-bold">126.8 km</td>
+              <td class="py-2 px-3">3.5 - 4.5 hrs</td>
+              <td class="py-2 px-3 text-slate-400">North Coast Highway (A01)</td>
+              <td class="py-2 px-3 text-blue-400">Forward Hub Baucau</td>
+              <td class="py-2 px-3"><span class="bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded text-[10px]">P0 | Immediate</span></td>
+              <td class="py-2 px-3 text-rose-400">Q1-Critical</td>
+              <td class="py-2 px-3 text-rose-400">5h &bull; No DG</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">SUA006</td>
+              <td class="py-2 px-3 text-slate-200">Suai Airport</td>
+              <td class="py-2 px-3">Cova Lima</td>
+              <td class="py-2 px-3 text-rose-400 font-bold">153.2 km</td>
+              <td class="py-2 px-3">5.5 - 7.0 hrs</td>
+              <td class="py-2 px-3 text-slate-400">South Coast Corridor</td>
+              <td class="py-2 px-3 text-amber-400">Forward Hub Suai</td>
+              <td class="py-2 px-3"><span class="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-[10px]">P2 | Planned</span></td>
+              <td class="py-2 px-3">Q3-Monitor</td>
+              <td class="py-2 px-3 text-amber-400">0h &bull; DG</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">PAN004</td>
+              <td class="py-2 px-3 text-slate-200">Lifau City (Enclave)</td>
+              <td class="py-2 px-3">Oecusse</td>
+              <td class="py-2 px-3 text-rose-400 font-bold">148.0 km</td>
+              <td class="py-2 px-3 text-purple-300">8.5 - 10.0 hrs (Ferry)</td>
+              <td class="py-2 px-3 text-purple-300">Berlin Nakroma Ferry + Road</td>
+              <td class="py-2 px-3 text-rose-400">Forward Hub Oecusse</td>
+              <td class="py-2 px-3"><span class="bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded text-[10px]">P2 | Planned</span></td>
+              <td class="py-2 px-3">Q3-Monitor</td>
+              <td class="py-2 px-3 text-slate-400">2h &bull; DG</td>
+            </tr>
+            <tr class="hover:bg-slate-800/40">
+              <td class="py-2 px-3 font-bold text-white">LOS009</td>
+              <td class="py-2 px-3 text-slate-200">SORO NAIRETE</td>
+              <td class="py-2 px-3">Lautem</td>
+              <td class="py-2 px-3 text-rose-400 font-bold">184.0 km</td>
+              <td class="py-2 px-3">6.0 - 7.0 hrs</td>
+              <td class="py-2 px-3 text-slate-400">Far East Coast (Lospalos)</td>
+              <td class="py-2 px-3 text-blue-400">Forward Hub Baucau</td>
+              <td class="py-2 px-3"><span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded text-[10px]">P1 | Early wave</span></td>
+              <td class="py-2 px-3 text-amber-400">Q2-High</td>
+              <td class="py-2 px-3 text-rose-400">2h &bull; No DG</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="text-[11px] text-slate-400 mt-2 text-right">
+        * Full 100-site matrix available in live application with search &amp; filter controls.
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 2: PLAN -->
+  <section id="tab-plan" class="tab-content hidden space-y-5">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+          <h3 class="text-base font-bold text-white">📅 12-Month Cadence &amp; Forward Hub Architecture</h3>
+          <p class="text-xs text-slate-400">Sequenced by territorial risk and logistics friction (Blueprint Page 9 &amp; 10).</p>
+        </div>
+        <span class="text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2.5 py-1 rounded font-bold font-mono">5 Execution Waves</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs mb-4">
+        <div class="p-3 bg-slate-950 border-t-2 border-sky-400 rounded-lg">
+          <strong class="text-sky-300 block">CENTRAL STAGING DILI</strong>
+          <span class="text-slate-400 block mt-1">Bulk staging &bull; Inbound QA &bull; Digital onboarding</span>
+          <div class="text-[10px] text-white mt-2 font-mono">Origin: Port Dili (-8.5520, 125.5711)</div>
+        </div>
+        <div class="p-3 bg-slate-950 border-t-2 border-blue-500 rounded-lg">
+          <strong class="text-blue-400 block">FORWARD HUB BAUCAU</strong>
+          <span class="text-slate-400 block mt-1">Northern coastal coverage via Estrada Nacional 1</span>
+          <div class="text-[10px] text-white mt-2 font-mono">Road Dist: 125 km (3.5 hrs)</div>
+        </div>
+        <div class="p-3 bg-slate-950 border-t-2 border-amber-500 rounded-lg">
+          <strong class="text-amber-400 block">FORWARD HUB SUAI</strong>
+          <span class="text-slate-400 block mt-1">Southern coverage &bull; Dry-season execution window</span>
+          <div class="text-[10px] text-white mt-2 font-mono">Road Dist: 153 km (5.5 hrs)</div>
+        </div>
+        <div class="p-3 bg-slate-950 border-t-2 border-rose-500 rounded-lg">
+          <strong class="text-rose-400 block">FORWARD HUB OECUSSE</strong>
+          <span class="text-slate-400 block mt-1">Enclave coverage &bull; Scheduled ferry staging</span>
+          <div class="text-[10px] text-white mt-2 font-mono">Ferry Route: 145 km (9 hrs)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: UPDATE -->
+  <section id="tab-update" class="tab-content hidden space-y-5">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+          <h3 class="text-base font-bold text-white">⚡ Master Excel Sync &amp; Field Dispatch Toggles</h3>
+          <p class="text-xs text-slate-400">Designed for low-tech field coordinators and maintenance simplicity.</p>
+        </div>
+        <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded font-bold font-mono">2-Way Sync</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-2">
+          <strong class="text-white text-sm block">1. Complete Master Tracker (.xlsx)</strong>
+          <p class="text-slate-400">
+            Contains Sheet 5: <strong>5_Timor_100_Sites_Routing</strong> with all 100 sites, coordinates, accessible distances from Port Dili, and priority tiers.
+          </p>
+          <a href="http://localhost:8501" target="_blank" class="inline-block bg-slate-800 hover:bg-slate-700 text-white font-medium px-3.5 py-2 rounded text-xs transition">
+            📥 Download Samvad_Master_Tracker_100Sites.xlsx
+          </a>
+        </div>
+        <div class="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-2">
+          <strong class="text-white text-sm block">2. Quick Readiness Gate Updates</strong>
+          <p class="text-slate-400">
+            Apply 1-click readiness decisions (GO / HOLD / ESCALATE / RESEQUENCE) according to Page 13 of the Blueprint.
+          </p>
+          <span class="text-emerald-400 font-semibold block">Automatic SQLite Audit Log &bull; Instant KPI Recalculation</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 4: REPORT -->
+  <section id="tab-report" class="tab-content hidden space-y-5">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+          <h3 class="text-base font-bold text-white">📄 Friday 14:00 Automated SLA Reporting</h3>
+          <p class="text-xs text-slate-400">100% compliance with strict Friday 17:00 WIB contract deadline.</p>
+        </div>
+        <span class="text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2.5 py-1 rounded font-bold font-mono">Auto-Compiled</span>
+      </div>
+
+      <p class="text-xs text-slate-300 mb-3">
+        The system automatically pulls live status from the 100 Timor-Leste sites, customs B/L trackers, and SG&amp;A ledgers every Friday at 14:00 WIB into executive-ready formats:
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-lg">
+          <strong class="text-white block mb-1">📄 PDF Status Report</strong>
+          <span class="text-slate-400">Executive summary for President Director</span>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-lg">
+          <strong class="text-white block mb-1">📝 MS Word (.docx)</strong>
+          <span class="text-slate-400">Formal operational briefing document</span>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-lg">
+          <strong class="text-white block mb-1">📊 Multi-Sheet Excel</strong>
+          <span class="text-slate-400">5-sheet detailed audit workbook</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-slate-800', 'text-slate-400');
+      });
+
+      const selectedContent = document.getElementById('tab-' + tabId);
+      const selectedBtn = document.getElementById('tab-btn-' + tabId);
+      if (selectedContent) selectedContent.classList.remove('hidden');
+      if (selectedBtn) {
+        selectedBtn.classList.remove('bg-slate-800', 'text-slate-400');
+        selectedBtn.classList.add('bg-blue-600', 'text-white');
+      }
+    }
+  </script>
+
+  <script>
+    const sitesData = [{"id": "DAX001", "name": "Fomento 1", "dist": "Dili", "lat": -8.5621, "lon": 125.5382, "km": 4.7, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX003", "name": "Timor Lodge", "dist": "Dili", "lat": -8.55678, "lon": 125.5275, "km": 6.0, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "DAX027", "name": "Aimutin 2", "dist": "Dili", "lat": -8.5555, "lon": 125.5455, "km": 3.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "CRE009", "name": "Kuluhun de Baixo", "dist": "Dili", "lat": -8.5551, "lon": 125.5895, "km": 2.6, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "DAX033", "name": "Mercado Comoro", "dist": "Dili", "lat": -8.55023, "lon": 125.5486, "km": 3.1, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "DAX024", "name": "Kampung Baru Dili", "dist": "Dili", "lat": -8.56499, "lon": 125.527, "km": 6.3, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "DAX004", "name": "Bebonuk", "dist": "Dili", "lat": -8.54704, "lon": 125.5416, "km": 4.1, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX014", "name": "Kampung Alor", "dist": "Dili", "lat": -8.55058, "lon": 125.5593, "km": 2.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX025", "name": "Markoni", "dist": "Dili", "lat": -8.5526, "lon": 125.5543, "km": 2.5, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "DAX008", "name": "Aimutin Santos", "dist": "Dili", "lat": -8.5591, "lon": 125.5511, "km": 2.9, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.5}, {"id": "VCU004", "name": "Dili Port", "dist": "Dili", "lat": -8.552, "lon": 125.5711, "km": 2.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "CRE018", "name": "Tubarai", "dist": "Dili", "lat": -8.56857, "lon": 125.5919, "km": 3.7, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 5.0}, {"id": "DAX005", "name": "Lurumata", "dist": "Dili", "lat": -8.5534, "lon": 125.5501, "km": 2.9, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX007", "name": "Fatuhada", "dist": "Dili", "lat": -8.54756, "lon": 125.5534, "km": 2.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX032", "name": "Malinamoc", "dist": "Dili", "lat": -8.55745, "lon": 125.5261, "km": 6.2, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 3.0}, {"id": "DAX035", "name": "Ailok Laran", "dist": "Dili", "lat": -8.57249, "lon": 125.565, "km": 3.0, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX038", "name": "Pantai Kelapa 2", "dist": "Dili", "lat": -8.5464, "lon": 125.5452, "km": 3.6, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "CRE020", "name": "Becusi Kraik", "dist": "Dili", "lat": -8.5686, "lon": 125.5983, "km": 4.4, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX042", "name": "Perumnas", "dist": "Dili", "lat": -8.5651, "lon": 125.5609, "km": 2.5, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "CRE024", "name": "HERA_II", "dist": "Dili", "lat": -8.55689, "lon": 125.6538, "km": 11.4, "time": "28 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "NFE007", "name": "Quintal Boot", "dist": "Dili", "lat": -8.5637, "lon": 125.5839, "km": 2.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "DAX040", "name": "Bebonuk 3", "dist": "Dili", "lat": -8.5446, "lon": 125.5375, "km": 4.7, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX018", "name": "Beto", "dist": "Dili", "lat": -8.54883, "lon": 125.5343, "km": 5.1, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "VCU007", "name": "Vila Verde", "dist": "Dili", "lat": -8.56258, "lon": 125.5678, "km": 2.5, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "NFE008", "name": "Audian", "dist": "Dili", "lat": -8.55817, "lon": 125.5856, "km": 2.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "DAX021", "name": "Delta 2", "dist": "Dili", "lat": -8.55679, "lon": 125.5377, "km": 4.6, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX026", "name": "Hudilaran", "dist": "Dili", "lat": -8.55603, "lon": 125.5589, "km": 2.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "CRE004", "name": "Bedois", "dist": "Dili", "lat": -8.56449, "lon": 125.618, "km": 6.7, "time": "16 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "VCU001", "name": "Palpaco", "dist": "Dili", "lat": -8.55335, "lon": 125.5658, "km": 2.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "VCU002", "name": "Untl", "dist": "Dili", "lat": -8.5557, "lon": 125.5785, "km": 2.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.5}, {"id": "BAZ004", "name": "Fatunia", "dist": "Liquisa", "lat": -8.56012, "lon": 125.4879, "km": 25.0, "time": "45 - 75 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "CRE014", "name": "Aituri Laran", "dist": "Dili", "lat": -8.57868, "lon": 125.595, "km": 5.0, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 4.0}, {"id": "NFE010", "name": "Lahane Ocidental", "dist": "Dili", "lat": -8.5769, "lon": 125.5865, "km": 4.1, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "NFE005", "name": "FFTL", "dist": "Dili", "lat": -8.55436, "lon": 125.5829, "km": 2.5, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 3.0}, {"id": "DAX019", "name": "BETO PNTL", "dist": "Dili", "lat": -8.55338, "lon": 125.5326, "km": 5.3, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 4.0}, {"id": "DAX039", "name": "DIT Baya Leste", "dist": "Dili", "lat": -8.56795, "lon": 125.5417, "km": 4.6, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "CRE019", "name": "Bedois TT", "dist": "Dili", "lat": -8.56757, "lon": 125.6172, "km": 6.7, "time": "16 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "CRE006", "name": "Hera", "dist": "Dili", "lat": -8.53015, "lon": 125.665, "km": 13.3, "time": "33 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "DAX046", "name": "UNPAZ", "dist": "Dili", "lat": -8.56471, "lon": 125.5466, "km": 3.8, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "CRE021", "name": "Becora Camea", "dist": "Dili", "lat": -8.5619, "lon": 125.6093, "km": 5.4, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "VCU010", "name": "UNDIL", "dist": "Dili", "lat": -8.56251, "lon": 125.5806, "km": 2.5, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX043", "name": "DELTA 3", "dist": "Dili", "lat": -8.55757, "lon": 125.5419, "km": 4.1, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "NFE004", "name": "Marabia", "dist": "Dili", "lat": -8.57971, "lon": 125.5751, "km": 3.9, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX041", "name": "Hudilaran 2", "dist": "Dili", "lat": -8.55934, "lon": 125.557, "km": 2.5, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "VEN003", "name": "ARIANA", "dist": "Baucau", "lat": -8.6335, "lon": 126.4173, "km": 125.3, "time": "3.5 - 4.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Baucau", "dg": true, "bk": 1.0}, {"id": "CRE022", "name": "Rooftop Unital", "dist": "Dili", "lat": -8.56345, "lon": 125.6065, "km": 5.1, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX015", "name": "TP Indoor", "dist": "Dili", "lat": -8.55368, "lon": 125.5413, "km": 4.1, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "CRE007", "name": "Balibar", "dist": "Dili", "lat": -8.59804, "lon": 125.6035, "km": 7.8, "time": "19 mins", "tier": "P3 | Monitor", "hub": "Central Staging Dili", "dg": true, "bk": 5.0}, {"id": "VCU008", "name": "EWSD", "dist": "Dili", "lat": -8.55892, "lon": 125.5791, "km": 2.5, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "CRE011", "name": "Taibesi 2", "dist": "Dili", "lat": -8.56429, "lon": 125.5976, "km": 4.0, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "PAN004", "name": "Lifau City", "dist": "Oecusse", "lat": -9.20373, "lon": 124.3691, "km": 148.0, "time": "8.5 - 10 hrs (Scheduled Ferry)", "tier": "P3 | Monitor", "hub": "Forward Hub Oecusse", "dg": true, "bk": 2.0}, {"id": "DAX028", "name": "Casnavar", "dist": "Dili", "lat": -8.60022, "lon": 125.531, "km": 8.7, "time": "21 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "DAX022", "name": "Kampung Merdeka", "dist": "Dili", "lat": -8.5582, "lon": 125.5326, "km": 5.4, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "MET003", "name": "Metinaro", "dist": "Dili", "lat": -8.53119, "lon": 125.756, "km": 25.6, "time": "64 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "DAX051", "name": "BETO ROOFTOP", "dist": "Dili", "lat": -8.54806, "lon": 125.5317, "km": 5.4, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "DAX045", "name": "Canossa", "dist": "Dili", "lat": -8.57032, "lon": 125.5354, "km": 5.5, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "BAU008", "name": "Gariuri", "dist": "Baucau", "lat": -8.54706, "lon": 126.4073, "km": 123.2, "time": "3.5 - 4.5 hrs", "tier": "P1 | Early wave", "hub": "Forward Hub Baucau", "dg": true, "bk": 5.0}, {"id": "DAX047", "name": "Lidun 2", "dist": "Dili", "lat": -8.58439, "lon": 125.5439, "km": 5.8, "time": "15 mins", "tier": "P0 | Immediate", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "LAG001", "name": "Saelari", "dist": "Baucau", "lat": -8.4993, "lon": 126.6785, "km": 163.4, "time": "3.5 - 4.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Baucau", "dg": true, "bk": 1.0}, {"id": "SUA006", "name": "Suai Airport", "dist": "Cova Lima", "lat": -9.31851, "lon": 125.2835, "km": 154.2, "time": "5.5 - 7.0 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Suai", "dg": true, "bk": 0.0}, {"id": "VCU012", "name": "ROOFTOP_COLMERA", "dist": "Dili", "lat": -8.55616, "lon": 125.5723, "km": 2.5, "time": "15 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "MET001", "name": "Duyung", "dist": "Dili", "lat": -8.52144, "lon": 125.7669, "km": 27.2, "time": "68 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "SUA013", "name": "Ouges", "dist": "Cova Lima", "lat": -9.29588, "lon": 125.2304, "km": 154.0, "time": "5.5 - 7.0 hrs", "tier": "P0 | Immediate", "hub": "Forward Hub Suai", "dg": true, "bk": 0.0}, {"id": "WAT002", "name": "Uatulari", "dist": "Viqueque", "lat": -8.82022, "lon": 126.5317, "km": 166.8, "time": "6.0 - 7.5 hrs", "tier": "P1 | Early wave", "hub": "Forward Hub Baucau / Viqueque", "dg": true, "bk": 2.0}, {"id": "VEM002", "name": "Vemasse", "dist": "Baucau", "lat": -8.51545, "lon": 126.2105, "km": 94.4, "time": "3.5 - 4.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Baucau", "dg": true, "bk": 0.0}, {"id": "DAX049", "name": "MASLIDUN", "dist": "Dili", "lat": -8.5666, "lon": 125.5046, "km": 9.4, "time": "23 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "PAN006", "name": "PADIAE", "dist": "Oecusse", "lat": -9.255, "lon": 124.3521, "km": 156.0, "time": "8.5 - 10 hrs (Scheduled Ferry)", "tier": "P1 | Early wave", "hub": "Forward Hub Oecusse", "dg": true, "bk": 0.5}, {"id": "CRE017", "name": "Hera Akanunu", "dist": "Dili", "lat": -8.54523, "lon": 125.6731, "km": 14.1, "time": "35 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 2.0}, {"id": "PAN005", "name": "Masin", "dist": "Oecusse", "lat": -9.21305, "lon": 124.3401, "km": 151.0, "time": "8.5 - 10 hrs (Scheduled Ferry)", "tier": "P1 | Early wave", "hub": "Forward Hub Oecusse", "dg": true, "bk": 2.0}, {"id": "BAL001", "name": "Fatuklulik", "dist": "Bobonaro", "lat": -8.97317, "lon": 125.0437, "km": 108.1, "time": "4.0 - 5.0 hrs", "tier": "P3 | Monitor", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "DAX020", "name": "DIT Manleuana", "dist": "Dili", "lat": -8.56404, "lon": 125.5447, "km": 4.0, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "LOS009", "name": "SORO NAIRETE", "dist": "Lautem", "lat": -8.51241, "lon": 126.9659, "km": 179.8, "time": "5.5 - 6.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Baucau", "dg": true, "bk": 2.0}, {"id": "BAZ008", "name": "LAUHATA", "dist": "Liquisa", "lat": -8.58462, "lon": 125.3562, "km": 30.6, "time": "45 - 75 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "VIQ009", "name": "Carabalun", "dist": "Viqueque", "lat": -8.85172, "lon": 126.3564, "km": 140.6, "time": "6.0 - 7.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Baucau / Viqueque", "dg": true, "bk": 0.0}, {"id": "DAX034", "name": "Arbiruh Beach", "dist": "Dili", "lat": -8.54028, "lon": 125.5383, "km": 4.8, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "DAX010", "name": "TP Outdoor", "dist": "Dili", "lat": -8.55379, "lon": 125.5413, "km": 4.1, "time": "15 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "RAI001", "name": "Tokoluli", "dist": "Ermera", "lat": -8.70246, "lon": 125.4378, "km": 37.4, "time": "2.5 - 4.0 hrs", "tier": "P3 | Monitor", "hub": "Central Staging Dili / Gleno", "dg": true, "bk": 3.0}, {"id": "MET002", "name": "Heineken Sabuli", "dist": "Dili", "lat": -8.53801, "lon": 125.6955, "km": 17.2, "time": "43 mins", "tier": "P3 | Monitor", "hub": "Central Staging Dili", "dg": true, "bk": 1.0}, {"id": "BAZ005", "name": "Terlau", "dist": "Liquisa", "lat": -8.63018, "lon": 125.4539, "km": 25.0, "time": "45 - 75 mins", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "BAZ003", "name": "Leovenia", "dist": "Liquisa", "lat": -8.68415, "lon": 125.3807, "km": 32.7, "time": "45 - 75 mins", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "NAT002", "name": "NATARBORA 2", "dist": "Manatuto", "lat": -8.98082, "lon": 126.0543, "km": 96.3, "time": "2.0 - 3.5 hrs", "tier": "P2 | Planned", "hub": "Central Staging Dili", "dg": true, "bk": 4.0}, {"id": "MAN002", "name": "Kampung Baru", "dist": "Manatuto", "lat": -8.53111, "lon": 126.0075, "km": 64.9, "time": "2.0 - 3.5 hrs", "tier": "P3 | Monitor", "hub": "Central Staging Dili", "dg": true, "bk": 0.2}, {"id": "SUA003", "name": "SUAI LORO", "dist": "Cova Lima", "lat": -9.3468, "lon": 125.2789, "km": 158.2, "time": "5.5 - 7.0 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Suai", "dg": true, "bk": 1.0}, {"id": "LOS007", "name": "PUIHORO", "dist": "Lautem", "lat": -8.50923, "lon": 126.9932, "km": 184.0, "time": "5.5 - 6.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Baucau", "dg": true, "bk": 3.0}, {"id": "MAN006", "name": "Iliheu", "dist": "Manatuto", "lat": -8.53905, "lon": 125.9531, "km": 56.7, "time": "2.0 - 3.5 hrs", "tier": "P1 | Early wave", "hub": "Central Staging Dili", "dg": true, "bk": 0.0}, {"id": "SAM005", "name": "Same Postu", "dist": "Manufahi", "lat": -9.001, "lon": 125.653, "km": 78.6, "time": "4.5 - 5.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Suai / Same", "dg": true, "bk": 0.0}, {"id": "MAB001", "name": "Vatunau", "dist": "Liquisa", "lat": -8.60885, "lon": 125.2769, "km": 42.2, "time": "45 - 75 mins", "tier": "P3 | Monitor", "hub": "Central Staging Dili", "dg": true, "bk": 0.5}, {"id": "SUA012", "name": "Suai Talioan", "dist": "Cova Lima", "lat": -9.32303, "lon": 125.2413, "km": 157.0, "time": "5.5 - 7.0 hrs", "tier": "P3 | Monitor", "hub": "Forward Hub Suai", "dg": true, "bk": 0.0}, {"id": "OSS003", "name": "LIARUKA", "dist": "Viqueque", "lat": -8.73561, "lon": 126.2786, "km": 122.2, "time": "6.0 - 7.5 hrs", "tier": "P0 | Immediate", "hub": "Forward Hub Baucau / Viqueque", "dg": true, "bk": 3.0}, {"id": "OSS001", "name": "Asalaitula", "dist": "Viqueque", "lat": -8.69832, "lon": 126.368, "km": 135.4, "time": "6.0 - 7.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Baucau / Viqueque", "dg": true, "bk": 0.0}, {"id": "BAG001", "name": "Baugia", "dist": "Baucau", "lat": -8.62838, "lon": 126.6535, "km": 159.9, "time": "3.5 - 4.5 hrs", "tier": "P3 | Monitor", "hub": "Forward Hub Baucau", "dg": true, "bk": 1.0}, {"id": "ERM002", "name": "Ermera Old Town", "dist": "Ermera", "lat": -8.75003, "lon": 125.4007, "km": 48.6, "time": "2.5 - 4.0 hrs", "tier": "P2 | Planned", "hub": "Central Staging Dili / Gleno", "dg": true, "bk": 4.0}, {"id": "LET002", "name": "Lauana", "dist": "Ermera", "lat": -8.88938, "lon": 125.4251, "km": 68.5, "time": "2.5 - 4.0 hrs", "tier": "P2 | Planned", "hub": "Central Staging Dili / Gleno", "dg": true, "bk": 0.5}, {"id": "BAG002", "name": "Defause", "dist": "Baucau", "lat": -8.59689, "lon": 126.699, "km": 166.3, "time": "3.5 - 4.5 hrs", "tier": "P0 | Immediate", "hub": "Forward Hub Baucau", "dg": true, "bk": 1.0}, {"id": "LET003", "name": "Ducurai", "dist": "Ermera", "lat": -8.82378, "lon": 125.4642, "km": 54.5, "time": "2.5 - 4.0 hrs", "tier": "P0 | Immediate", "hub": "Central Staging Dili / Gleno", "dg": true, "bk": 0.5}, {"id": "SAM006", "name": "Manico", "dist": "Manufahi", "lat": -8.99928, "lon": 125.6418, "km": 78.0, "time": "4.5 - 5.5 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Suai / Same", "dg": true, "bk": 0.0}, {"id": "BAR001", "name": "Manehat", "dist": "Manatuto", "lat": -8.9137, "lon": 125.9721, "km": 80.6, "time": "2.0 - 3.5 hrs", "tier": "P3 | Monitor", "hub": "Central Staging Dili", "dg": true, "bk": 0.5}, {"id": "SUA002", "name": "Haemanu", "dist": "Cova Lima", "lat": -9.2559, "lon": 125.3428, "km": 142.8, "time": "5.5 - 7.0 hrs", "tier": "P2 | Planned", "hub": "Forward Hub Suai", "dg": true, "bk": 0.0}, {"id": "LET001", "name": "Lete foho", "dist": "Ermera", "lat": -8.83195, "lon": 125.4131, "km": 59.9, "time": "2.5 - 4.0 hrs", "tier": "P2 | Planned", "hub": "Central Staging Dili / Gleno", "dg": true, "bk": 0.0}, {"id": "ATU002", "name": "Atauro", "dist": "Dili", "lat": -8.27299, "lon": 125.5992, "km": 36.5, "time": "1.5 - 2.0 hrs (Sea)", "tier": "P1 | Early wave", "hub": "Port Dili Sea Terminal", "dg": true, "bk": 0.0}];
+
+    let map = null;
+    let currentTileLayer = null;
+
+    const tileLayers = {
+      osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 18
+      }),
+      dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap & CARTO',
+        maxZoom: 18
+      })
+    };
+
+    function setTileLayer(type) {
+      if (!map) return;
+      if (currentTileLayer) map.removeLayer(currentTileLayer);
+      currentTileLayer = tileLayers[type];
+      currentTileLayer.addTo(map);
+
+      document.getElementById('btn-tile-osm').className = type === 'osm' ? 'px-2 py-0.5 rounded bg-blue-600 text-white font-bold' : 'px-2 py-0.5 rounded bg-slate-800 text-slate-300';
+      document.getElementById('btn-tile-dark').className = type === 'dark' ? 'px-2 py-0.5 rounded bg-blue-600 text-white font-bold' : 'px-2 py-0.5 rounded bg-slate-800 text-slate-300';
+    }
+
+    function initMap() {
+      const mapEl = document.getElementById('timor-leaflet-map');
+      if (!mapEl || map) return;
+
+      map = L.map('timor-leaflet-map').setView([-8.78, 125.72], 8);
+      currentTileLayer = tileLayers.osm;
+      currentTileLayer.addTo(map);
+
+      function getTierColor(tier) {
+        if (tier.includes('P0')) return '#EF4444';
+        if (tier.includes('P1')) return '#F59E0B';
+        if (tier.includes('P2')) return '#3B82F6';
+        return '#64748B';
+      }
+
+      sitesData.forEach(s => {
+        const color = getTierColor(s.tier);
+        const circle = L.circleMarker([s.lat, s.lon], {
+          radius: s.tier.includes('P0') ? 8 : 6,
+          fillColor: color,
+          color: '#ffffff',
+          weight: 1.5,
+          opacity: 0.9,
+          fillOpacity: 0.85
+        }).addTo(map);
+
+        const popupContent = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12px; line-height: 1.4; min-width: 180px; color: #0f172a;">
+            <strong style="color: #0f172a; font-size: 13px;">${s.id} - ${s.name}</strong><br/>
+            <span style="color: #475569;">District:</span> <b>${s.dist}</b><br/>
+            <span style="color: #0284c7;">Route Dist from Port Dili:</span> <b style="color: #0284c7;">${s.km} km</b><br/>
+            <span style="color: #475569;">Est. Transit Time:</span> <b>${s.time}</b><br/>
+            <span style="color: #475569;">Forward Hub:</span> <b>${s.hub}</b><br/>
+            <span style="color: #475569;">Power:</span> <b>${s.bk}h &bull; ${s.dg ? 'DG' : 'No DG'}</b><br/>
+            <span style="display: inline-block; margin-top: 4px; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; color: white; background-color: ${color};">${s.tier}</span>
+          </div>
+        `;
+        circle.bindPopup(popupContent);
+      });
+
+      // Origin: Port Dili Star Marker
+      const portDiliIcon = L.divIcon({
+        className: 'port-dili-marker',
+        html: '<div style="background: #10B981; border: 2px solid white; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 10px rgba(16,185,129,0.8);">⚓</div>',
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
+      L.marker([-8.5520, 125.5711], { icon: portDiliIcon }).addTo(map)
+        .bindPopup('<b style="color: #047857; font-size: 13px;">⚓ Port Dili Sea Terminal (-8.5520, 125.5711)</b><br/>Central Staging Warehouse & Maritime Port Origin');
+
+      // Forward Hubs Markers
+      const hubs = [
+        { name: 'Forward Hub Baucau', lat: -8.4710, lon: 126.4580, dist: '125 km (3.5 hrs)' },
+        { name: 'Forward Hub Suai', lat: -9.3130, lon: 125.2570, dist: '153 km (5.5 hrs)' },
+        { name: 'Forward Hub Oecusse', lat: -9.2000, lon: 124.3700, dist: '148 km (9.0 hrs Ferry)' }
+      ];
+      hubs.forEach(h => {
+        const hubIcon = L.divIcon({
+          className: 'hub-marker',
+          html: '<div style="background: #F59E0B; border: 2px solid white; border-radius: 4px; padding: 2px 5px; font-weight: bold; font-size: 10px; color: black; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">🏢 ' + h.name.replace('Forward Hub ', '') + '</div>',
+          iconSize: [80, 20],
+          iconAnchor: [40, 10]
+        });
+        L.marker([h.lat, h.lon], { icon: hubIcon }).addTo(map)
+          .bindPopup('<b>' + h.name + '</b><br/>Road/Ferry Distance from Port Dili: ' + h.dist);
+      });
+
+      // Maritime Ferry Line: Port Dili -> Atauro Island
+      L.polyline([[-8.5520, 125.5711], [-8.2700, 125.6000]], {
+        color: '#A855F7',
+        weight: 3,
+        dashArray: '6, 6'
+      }).addTo(map).bindPopup('<b>🚢 Ferry Route: Port Dili ↔ Atauro Island (36.5 km)</b><br/>Est. Transit: 1.5 - 2.0 hrs');
+
+      // Maritime Ferry Line: Port Dili -> Oecusse Enclave (Berlin Nakroma)
+      L.polyline([
+        [-8.5520, 125.5711],
+        [-8.6000, 125.0000],
+        [-9.0000, 124.6000],
+        [-9.2000, 124.3700]
+      ], {
+        color: '#EC4899',
+        weight: 3,
+        dashArray: '6, 6'
+      }).addTo(map).bindPopup('<b>🚢 Berlin Nakroma Ferry: Port Dili ↔ Lifau/Oecusse (~148 km)</b><br/>Est. Transit: 8.5 - 10.0 hrs');
+    }
+
+    window.addEventListener('DOMContentLoaded', initMap);
+
+    const origSwitchTab = window.switchTab;
+    window.switchTab = function(tabId) {
+      origSwitchTab(tabId);
+      if (tabId === 'wallboard' && map) {
+        setTimeout(() => map.invalidateSize(), 150);
+      }
+    };
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Environments & binaries
+.venv/
+bin/
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+
+# Temporary scratch & database files
+*.db
+scratch/
+.system_generated/
