@@ -271,6 +271,27 @@ def compute_operational_routing(site: Dict[str, Any]) -> Dict[str, Any]:
     else:
         readiness = "GO (Dispatch Ready)"
 
+    # PaaS Rollout Operational Status (Samvad Pure Power Infrastructure Scope)
+    # 1. Shipping & Customs (8 sites): Inbound maritime shipments / Port Dili customs inspection
+    # 2. Staged / Dili Hub (26 sites): Ready in Port Dili Central Staging (12 sites flagged with TowerCo Civil Dependency)
+    # 3. Power I&C Active (22 sites): Active installation of Eltek/Harif rectifiers & battery banks
+    # 4. Testing & QA (16 sites): Battery discharge load test & digital I&C SOP audit
+    # 5. Handover Telkomcel (28 sites): Completed 100%, PAC/BAST signed, handed over to Telkomcel
+    site_no = site.get("no", 1)
+    if site_no <= 28:
+        paas_status = "🟢 Handover Telkomcel"
+    elif site_no <= 44:
+        paas_status = "🟡 Testing & QA"
+    elif site_no <= 66:
+        paas_status = "🟣 Power I&C Active"
+    elif site_no <= 78:
+        paas_status = "⚪ Staged / Delivery Ready"
+        readiness = "HOLD (Civil Dependency)"
+    elif site_no <= 92:
+        paas_status = "⚪ Staged / Dili Hub"
+    else:
+        paas_status = "Shipping & Customs"
+
     return {
         **site,
         "haversine_distance_km": h_dist,
@@ -283,8 +304,11 @@ def compute_operational_routing(site: Dict[str, Any]) -> Dict[str, Any]:
         "priority_index": priority_idx,
         "priority_tier": p_tier,
         "readiness_gate": readiness,
+        "paas_status": paas_status,
+        "operator": site.get("operator", "Telkomcel"),
         "is_extreme": 1 if is_extreme else 0
     }
+
 
 def get_timor_100_sites_dataframe() -> pd.DataFrame:
     """Returns all 100 Timor-Leste sites enriched with operational routing attributes."""
@@ -296,6 +320,13 @@ def seed_timor_100_sites(db_path: str = None) -> None:
     conn = get_connection(db_path)
     cursor = conn.cursor()
     
+    # Check if table exists and has paas_status and operator column
+    cursor.execute("PRAGMA table_info(timor_sites_100)")
+    existing_cols = [row[1] for row in cursor.fetchall()]
+    if existing_cols and ("paas_status" not in existing_cols or "operator" not in existing_cols):
+        cursor.execute("DROP TABLE IF EXISTS timor_sites_100")
+        existing_cols = []
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS timor_sites_100 (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -323,18 +354,20 @@ def seed_timor_100_sites(db_path: str = None) -> None:
         priority_index REAL NOT NULL,
         priority_tier TEXT NOT NULL,
         readiness_gate TEXT NOT NULL,
+        paas_status TEXT NOT NULL,
+        operator TEXT DEFAULT 'Telkomcel',
         is_extreme INTEGER DEFAULT 0
     )
     """)
 
-    # Check if already seeded
+    # Check if already seeded (any existing rows means table is populated)
     cursor.execute("SELECT COUNT(*) FROM timor_sites_100")
-    if cursor.fetchone()[0] == 100:
+    count_row = cursor.fetchone()
+    if count_row and count_row[0] > 0:
         conn.close()
-        return # Already loaded
+        return # Already loaded and operational — NEVER delete user modifications!
 
-    # Clear and insert all 100
-    cursor.execute("DELETE FROM timor_sites_100")
+    # Insert initial baseline only on completely fresh/empty database
     df = get_timor_100_sites_dataframe()
     
     cols = [
@@ -342,7 +375,7 @@ def seed_timor_100_sites(db_path: str = None) -> None:
         "revenue_tier", "quadrant", "has_dg", "program", "lon", "lat", "notes",
         "haversine_distance_km", "accessible_route_km", "transport_mode", "est_travel_time",
         "assigned_forward_hub", "deployment_zone", "delivery_wave", "priority_index",
-        "priority_tier", "readiness_gate", "is_extreme"
+        "priority_tier", "readiness_gate", "paas_status", "operator", "is_extreme"
     ]
     
     placeholders = ", ".join(["?"] * len(cols))
@@ -355,6 +388,7 @@ def seed_timor_100_sites(db_path: str = None) -> None:
     cursor.executemany(sql, rows)
     conn.commit()
     conn.close()
+
 
 if __name__ == "__main__":
     df_test = get_timor_100_sites_dataframe()

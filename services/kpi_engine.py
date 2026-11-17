@@ -192,15 +192,15 @@ class KPICalculator:
 
         if overall_percentage >= 115.0:
             tier_label = "Tier 1: Maximum 120% Performance Tier"
-            tier_badge = "🌟 MAXIMUM 120%"
+            tier_badge = "MAXIMUM 120%"
             tier_color = "#10B981" # Emerald Green
         elif overall_percentage >= 100.0:
             tier_label = "Tier 2: 100% On-Target Contract Compliance"
-            tier_badge = "✅ ON TARGET (100%)"
+            tier_badge = "ON TARGET (100%)"
             tier_color = "#3B82F6" # Blue
         else:
             tier_label = "Tier 3: Below Target (<100%)"
-            tier_badge = "⚠️ ACTION REQUIRED"
+            tier_badge = "ACTION REQUIRED"
             tier_color = "#EF4444" # Red
 
         return {

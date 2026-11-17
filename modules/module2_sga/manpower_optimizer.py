@@ -48,20 +48,20 @@ class ManpowerOptimizer:
             if c_type == "Daily Rate":
                 if daily_cost_equivalent > retainer_rate:
                     potential_saving = daily_cost_equivalent - retainer_rate
-                    recommendation = "⚡ CONVERT TO RETAINER (High Savings)"
+                    recommendation = "CONVERT TO RETAINER (High Savings)"
                     status_flag = "OVER_BUDGET_DAILY"
                 elif total_days >= 12:
                     potential_saving = 0.0
-                    recommendation = "👀 Monitor (Approaching Retainer Threshold)"
+                    recommendation = "Monitor (Approaching Retainer Threshold)"
                     status_flag = "WATCH"
                 else:
                     potential_saving = 0.0
-                    recommendation = "✅ Maintain Daily Rate (Low Frequency)"
+                    recommendation = "Maintain Daily Rate (Low Frequency)"
                     status_flag = "OPTIMAL_DAILY"
             else:
                 # Already on retainer
                 actual_saving_vs_daily = max(0.0, daily_cost_equivalent - retainer_rate)
-                recommendation = f"🔒 On Fixed Retainer (Saves IDR {actual_saving_vs_daily:,.0f}/mo)"
+                recommendation = f"On Fixed Retainer (Saves IDR {actual_saving_vs_daily:,.0f}/mo)"
                 potential_saving = actual_saving_vs_daily
                 status_flag = "OPTIMAL_RETAINER"
 

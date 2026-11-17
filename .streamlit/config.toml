@@ -1,9 +1,18 @@
+[global]
+disableWidgetStateDuplicationWarning = true
+
+[theme]
+primaryColor = "#0284C7"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1E293B"
+font = "sans serif"
+
 [server]
-port = 8501
-address = "0.0.0.0"
 headless = true
 enableCORS = false
 enableXsrfProtection = false
+enableStaticServing = true
 
 [browser]
 gatherUsageStats = false

@@ -9,33 +9,33 @@ from modules.module4_reporting.auto_reporter import FridayAutoReporter
 from modules.module4_reporting.poc_tracker import POCTracker
 
 def render_module4():
-    st.markdown("## ⏱️ Module 4: SLA Reporting & Presales Engine")
+    st.markdown("## Module 4: SLA Reporting & Presales Engine")
     st.caption("KPI Category D — 25% Weight | Target: 100% On-Time Weekly Reports by Friday 17:00 WIB & 5-Days Ahead POC Deliveries")
 
     reporter = FridayAutoReporter()
     poc_tracker = POCTracker()
 
     tab1, tab2, tab3 = st.tabs([
-        "📅 Friday 14:00 Auto-Reporter & Export Center",
-        "📊 POC Gantt & 5-Days Ahead Milestone Tracker",
-        "➕ Register Presales POC Milestone"
+        "Friday 14:00 Auto-Reporter & Export Center",
+        "POC Gantt & 5-Days Ahead Milestone Tracker",
+        "Register Presales POC Milestone"
     ])
 
     with tab1:
         st.subheader("Friday 14:00 WIB Automated SLA Status Reporter")
         st.info(
-            "⚡ **Automated Extraction Protocol:** Consolidates live operational performance data from "
+            "**Automated Extraction Protocol:** Consolidates live operational performance data from "
             "**Module 1 (Customs)**, **Module 2 (SG&A & Financials)**, and **Module 3 (Site Operations)** "
             "every Friday at **14:00 WIB**, ensuring full compliance with the strict **17:00 WIB contract deadline**."
         )
 
         rc1, rc2, rc3 = st.columns(3)
         rc1.metric("Automated Trigger Time", "Friday 14:00 WIB", delta="Active Schedule")
-        rc2.metric("Contract SLA Deadline", "Friday 17:00 WIB", delta="3-Hour Buffer Guarantee")
+        rc2.metric("Contract SLA Deadline", "Friday 17:00 WIB", delta="3-Hour Buffer")
         rc3.metric("Historical Delivery SLA", "100.0% On-Time", delta="Zero Penalties")
 
         st.markdown("---")
-        st.markdown("#### 🚀 Trigger & Compile Current Week's PMO Report Bundle")
+        st.markdown("#### Trigger & Compile Current Week's PMO Report Bundle")
         
         col_run, col_week = st.columns([2, 1])
         with col_week:
@@ -44,18 +44,18 @@ def render_module4():
         with col_run:
             st.write("")
             st.write("")
-            if st.button("⚡ Execute Friday 14:00 Auto-Run & Compile Bundle (PDF, Word, Excel)", type="primary"):
+            if st.button("Execute Friday 14:00 Auto-Run & Compile Bundle (PDF, Word, Excel)", type="primary"):
                 with st.spinner("Aggregating multidisciplinary modules and compiling executive files..."):
                     bundle = reporter.generate_friday_weekly_bundle(week_num=target_week)
-                    st.success(f"✅ Report Bundle `{bundle['report_code']}` successfully compiled! Compliance: {bundle['compliance_status']}")
+                    st.success(f"Report Bundle `{bundle['report_code']}` successfully compiled! Compliance: {bundle['compliance_status']}")
                     
-                    st.markdown("##### 📥 Executive Deliverables for President Director & Clients:")
+                    st.markdown("##### Executive Deliverables for President Director & Clients:")
                     dcol1, dcol2, dcol3 = st.columns(3)
 
                     # PDF
                     with open(bundle["pdf_path"], "rb") as f_pdf:
                         dcol1.download_button(
-                            "📄 Download PDF Status Report",
+                            "Download PDF Status Report",
                             data=f_pdf.read(),
                             file_name=f"Samvad_PMO_Weekly_Report_W{target_week}.pdf",
                             mime="application/pdf"
@@ -64,7 +64,7 @@ def render_module4():
                     # Word
                     with open(bundle["docx_path"], "rb") as f_docx:
                         dcol2.download_button(
-                            "📝 Download Word Briefing (.docx)",
+                            "Download Word Briefing (.docx)",
                             data=f_docx.read(),
                             file_name=f"Samvad_PMO_Briefing_W{target_week}.docx",
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -73,7 +73,7 @@ def render_module4():
                     # Excel
                     with open(bundle["xlsx_path"], "rb") as f_xlsx:
                         dcol3.download_button(
-                            "📊 Download Multi-Sheet Excel (.xlsx)",
+                            "Download Multi-Sheet Excel (.xlsx)",
                             data=f_xlsx.read(),
                             file_name=f"Samvad_PMO_Audit_W{target_week}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -112,10 +112,10 @@ def render_module4():
                 color="stretch_status_evaluated",
                 title="Presales POC Execution Timeline & Milestone Buffers",
                 color_discrete_map={
-                    "🌟 5-Day Ahead Stretch Met": "#10B981",
-                    "⚡ Ahead / On Pace for Stretch": "#3B82F6",
-                    "🟡 Standard Pace (Stretch at Risk)": "#F59E0B",
-                    "🔴 Lagging Behind Contract Target": "#EF4444"
+                    "5-Day Ahead Stretch Met": "#10B981",
+                    "Ahead / On Pace for Stretch": "#3B82F6",
+                    "Standard Pace (Stretch at Risk)": "#F59E0B",
+                    "Lagging Behind Contract Target": "#EF4444"
                 }
             )
             fig_gantt.update_yaxes(autorange="reversed")
@@ -131,7 +131,7 @@ def render_module4():
             )
 
     with tab3:
-        st.subheader("➕ Register New Presales POC Milestone")
+        st.subheader("Register New Presales POC Milestone")
         with st.form("form_new_poc"):
             pc1, pc2 = st.columns(2)
             poc_code = pc1.text_input("POC Code (e.g. POC-2026-CLIENT-04)")

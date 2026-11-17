@@ -66,5 +66,23 @@ class TestTimor100Sites(unittest.TestCase):
         self.assertGreater(suai["accessible_route_km"], 130.0)
         self.assertEqual(suai["assigned_forward_hub"], "Forward Hub Suai")
 
+    def test_paas_status_breakdown(self):
+        self.assertIn("paas_status", self.df.columns)
+        handover = len(self.df[self.df["paas_status"] == "🟢 Handover Telkomcel"])
+        testing = len(self.df[self.df["paas_status"] == "🟡 Testing & QA"])
+        power = len(self.df[self.df["paas_status"] == "🟣 Power I&C Active"])
+        staged = len(self.df[self.df["paas_status"].str.contains("Staged", na=False)])
+        shipping = len(self.df[self.df["paas_status"] == "Shipping & Customs"])
+        civil_deps = len(self.df[self.df["readiness_gate"].str.contains("Civil", na=False)])
+        
+        self.assertEqual(handover + testing + power + staged + shipping, 100)
+        self.assertEqual(handover, 28)
+        self.assertEqual(power, 22)
+        self.assertEqual(testing, 16)
+        self.assertEqual(staged, 26)  # 14 Dili Hub + 12 Staged awaiting Civil Plinth
+        self.assertEqual(civil_deps, 12)  # 12 sites flagged with TowerCo Civil Dependency
+        self.assertEqual(shipping, 8)
+
 if __name__ == '__main__':
     unittest.main()
+

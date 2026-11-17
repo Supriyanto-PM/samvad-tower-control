@@ -86,7 +86,7 @@ class NotificationDispatcher:
     def dispatch_emergency_outage(self, site_id: str, site_name: str, duration_mins: int, root_cause: str) -> Dict[str, Any]:
         """Formats and triggers an emergency outage alert (>15 mins) to NOC & Field Technicians."""
         text = (
-            f"🚨 <b>[SAMVAD PMO EMERGENCY OUTAGE ALERT]</b> 🚨\n\n"
+            f"<b>[SAMVAD PMO EMERGENCY OUTAGE ALERT]</b>\n\n"
             f"<b>Site ID:</b> {site_id}\n"
             f"<b>Site Name:</b> {site_name}\n"
             f"<b>Downtime Duration:</b> {duration_mins} minutes (Exceeded >15m SLA Buffer!)\n"
@@ -101,7 +101,7 @@ class NotificationDispatcher:
     def dispatch_customs_warning(self, bl_number: str, item_desc: str, eta: str, deadline: str, buffer_days: int) -> Dict[str, Any]:
         """Formats and triggers a customs seaport delay warning alert."""
         text = (
-            f"⚠️ <b>[SAMVAD CUSTOMS DELAY WARNING]</b> ⚠️\n\n"
+            f"<b>[SAMVAD CUSTOMS DELAY WARNING]</b>\n\n"
             f"<b>B/L Number:</b> {bl_number}\n"
             f"<b>Item:</b> {item_desc}\n"
             f"<b>ETA Port:</b> {eta}\n"
@@ -110,3 +110,198 @@ class NotificationDispatcher:
             f"<b>Action:</b> Expedite customs clearance with forwarding agent to prevent SLA penalty."
         )
         return self.send_telegram_alert(text)
+
+    def generate_work_order_payload(self, site_input: Any, team_input: Any) -> Dict[str, Any]:
+        """
+        Generates formatted work order text, ticket ID, and wa.me deep link.
+        Accepts either string IDs or dictionary representations of site and team.
+        """
+        import urllib.parse
+        from database.connection import query_df
+
+        # Resolve site dict
+        if isinstance(site_input, dict):
+            site = site_input
+            site_id = site.get("site_id", "UNKNOWN")
+        else:
+            site_id = str(site_input)
+            df_site = query_df("SELECT * FROM timor_sites_100 WHERE site_id = ?", (site_id,))
+            if df_site.empty:
+                return {"status": "ERROR", "message": f"Site {site_id} not found."}
+            site = df_site.iloc[0].to_dict()
+
+        # Resolve team dict
+        if isinstance(team_input, dict):
+            team = team_input
+            team_code = team.get("team_code", "TEAM")
+        else:
+            team_code = str(team_input)
+            df_team = query_df("SELECT * FROM paas_field_teams WHERE team_code = ?", (team_code,))
+            if not df_team.empty:
+                team = df_team.iloc[0].to_dict()
+            else:
+                team = {"team_code": team_code}
+
+        team_name = team.get("team_name", team_code)
+        lead_name = team.get("lead_name", "Field Lead PIC")
+        phone = str(team.get("contact_number") or team.get("lead_phone") or "+67077231001").strip()
+        specialization = team.get("specialization", "Power I&C")
+
+        clean_phone = phone.replace("+", "").replace("-", "").replace(" ", "").replace("(", "").replace(")", "")
+        if not clean_phone.startswith("670") and not clean_phone.startswith("62") and not clean_phone.startswith("1"):
+            clean_phone = f"670{clean_phone}"
+
+        sname = site.get("site_name", site_id)
+        operator = site.get("operator", "Telkomcel")
+        district = site.get("district", "Regional Sector")
+        rectifier = site.get("rectifier", "Eltek 48V/3000W Smart Hybrid")
+        lat = site.get("lat")
+        lon = site.get("lon")
+        km = float(site.get("accessible_route_km") or 15.0)
+        mode = str(site.get("transport_mode") or "4x4 Overland Truck").strip()
+        eta = str(site.get("est_travel_time") or "1h 30m").strip()
+        gate = site.get("readiness_gate", "Gate GO (Civil Certified)")
+
+        # Fallback query if coordinates or ETA missing in passed dict
+        if lat is None or lon is None or not site.get("est_travel_time"):
+            df_fallback = query_df("SELECT lat, lon, est_travel_time, transport_mode, accessible_route_km, operator FROM timor_sites_100 WHERE site_id = ?", (site_id,))
+            if not df_fallback.empty:
+                r_fb = df_fallback.iloc[0].to_dict()
+                if lat is None:
+                    lat = r_fb.get("lat")
+                if lon is None:
+                    lon = r_fb.get("lon")
+                if not site.get("est_travel_time") and r_fb.get("est_travel_time"):
+                    eta = str(r_fb.get("est_travel_time")).strip()
+                if not site.get("transport_mode") and r_fb.get("transport_mode"):
+                    mode = str(r_fb.get("transport_mode")).strip()
+                if not site.get("operator") and r_fb.get("operator"):
+                    operator = r_fb.get("operator")
+
+        if lat is not None and lon is not None:
+            try:
+                lat_f = float(lat)
+                lon_f = float(lon)
+                lat_str = f"{lat_f:.5f}"
+                lon_str = f"{lon_f:.5f}"
+                maps_link = f"https://maps.google.com/?q={lat_f:.5f},{lon_f:.5f}"
+            except (ValueError, TypeError):
+                lat_str = str(lat)
+                lon_str = str(lon)
+                maps_link = f"https://maps.google.com/?q={lat},{lon}"
+        else:
+            lat_str = "Pending PMO GPS Survey"
+            lon_str = "Pending PMO GPS Survey"
+        from services.fleet_tracking_service import FleetTrackingService
+
+        # Calculate real-time road distance and travel ETA directly from crew's live location to this specific site
+        t_lat = team.get("current_lat")
+        t_lon = team.get("current_lon")
+        t_addr = team.get("current_address")
+
+        if (t_lat is None or t_lon is None) and team_code:
+            df_t = query_df("SELECT current_lat, current_lon, current_address FROM paas_field_teams WHERE team_code = ? LIMIT 1", (team_code,))
+            if not df_t.empty and pd.notna(df_t.iloc[0]["current_lat"]):
+                t_lat = float(df_t.iloc[0]["current_lat"])
+                t_lon = float(df_t.iloc[0]["current_lon"])
+                t_addr = str(df_t.iloc[0]["current_address"] or "")
+
+        if t_lat is not None and t_lon is not None and lat is not None and lon is not None:
+            routing = FleetTrackingService.calculate_road_routing(t_lat, t_lon, float(lat), float(lon))
+            if routing.get("road_km") is not None:
+                site_dist_str = f"{routing['road_km']:.1f} km (via Fastest Accessible Road)"
+                site_eta_str = f"{routing['eta_text']}"
+            else:
+                site_dist_str = f"{km:.1f} km"
+                site_eta_str = eta
+        else:
+            site_dist_str = f"{km:.1f} km (Calculated upon GPS Check-In)"
+            site_eta_str = f"{eta} (Estimated)"
+
+        checkin_url = FleetTrackingService.generate_checkin_url(team_code, site_id, phone=clean_phone)
+
+        text = (
+            f"*SAMVAD PMO-CC // PAAS SITE WORK ORDER DISPATCH*\n"
+            f"────────────────────────────\n"
+            f"*Ticket No:* WO-PAAS-{site_id}\n"
+            f"*Assigned Team:* {team_name}\n"
+            f"*Lead PIC:* {lead_name}\n"
+            f"*PIC Contact:* {phone}\n"
+            f"*Client Operator:* {operator}\n\n"
+            f"*LIVE GPS CHECK-IN (AUTHORIZED PIC DEVICE ONLY):*\n"
+            f"Click to start check-in:\n"
+            f"{checkin_url}\n"
+            f"_Security: Locked to registered PIC device. Forwarding prohibited._\n\n"
+            f"*TARGET SITE LOCATION & NAVIGATION:*\n"
+            f"• *Target Site ID:* {site_id}\n"
+            f"• *Target Site Name:* {sname}\n"
+            f"• *District Sector:* {district}\n"
+            f"• *Site Latitude (Lat):* {lat_str}\n"
+            f"• *Site Longitude (Lon):* {lon_str}\n"
+            f"• *Road Distance to Target Site:* {site_dist_str}\n"
+            f"• *Estimated Travel Time (ETA) to Site:* {site_eta_str}\n"
+            f"• *Access Route & Transport:* {mode}\n"
+            f"• *Google Maps Navigation:* {maps_link}\n\n"
+            f"*TECHNICAL SPECIFICATIONS & SCOPE OF WORK:*\n"
+            f"• *Equipment:* {rectifier}\n"
+            f"• *Battery Bank:* 48V/200Ah LiFePO4 Lithium Battery Bank\n"
+            f"• *Crew Specialization:* {specialization}\n"
+            f"• *Work Instructions:* Install DC power distribution panel, mount rectifier shelf, terminate DC cabling, and calibrate RMS telemetry to PMO-NOC.\n\n"
+            f"*READINESS & MILESTONE TARGET:*\n"
+            f"• *Readiness Gate:* {gate}\n"
+            f"• *Target Milestone:* Week 36 (Friday 17:00 OTL)\n\n"
+            f"*FIELD BLOCKER ESCALATION:*\n"
+            f"If any site impediment occurs (access locked, plinth defect, permit pending), reply directly to this chat:\n"
+            f"*FORMAT:* `BLOCK {site_id} [Category] [Reason]`\n"
+            f"_Example:_ `BLOCK {site_id} Civil Plinth not cured`\n\n"
+            f"*PMO Escalation Desk:* +6282129394444 (Samvad NOC Command)\n"
+            f"────────────────────────────\n"
+            f"_Auto-generated by Samvad PMO Command Center_"
+        )
+
+        encoded_text = urllib.parse.quote(text)
+        wa_link = f"https://wa.me/{clean_phone}?text={encoded_text}"
+
+        return {
+            "status": "READY",
+            "site_id": site_id,
+            "site_name": sname,
+            "team_code": team_code,
+            "team_name": team_name,
+            "lead_name": lead_name,
+            "phone": clean_phone,
+            "wa_link": wa_link,
+            "checkin_url": checkin_url,
+            "message_text": text
+        }
+
+    def dispatch_site_work_order(self, site_id: str, team_code: str, log_audit: bool = True) -> Dict[str, Any]:
+        """
+        Formats and dispatches a comprehensive PaaS Rollout Work Order directly to the
+        assigned Team Leader's WhatsApp. Generates a wa.me direct link as well as
+        triggering the automated WhatsApp API if configured.
+        """
+        payload = self.generate_work_order_payload(site_id, team_code)
+        if payload.get("status") == "ERROR":
+            return payload
+
+        text = payload["message_text"]
+        clean_phone = payload["phone"]
+
+        # Dispatch automated alert if credentials exist
+        wa_res = self.send_whatsapp_alert(text, phone_number=clean_phone)
+
+        # Log to audit table
+        if log_audit:
+            execute_write(
+                """
+                INSERT INTO notification_audit_logs (channel, recipient, message_type, payload, sent_status)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                ("WhatsApp", clean_phone, f"WO_DISPATCH_{site_id}", text, wa_res.get("status", "SIMULATED")),
+                db_path=self.db_path
+            )
+
+        payload["dispatch_status"] = wa_res.get("status", "SUCCESS")
+        return payload
+

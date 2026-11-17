@@ -198,5 +198,7 @@ CREATE TABLE IF NOT EXISTS timor_sites_100 (
     priority_index REAL NOT NULL,
     priority_tier TEXT NOT NULL,
     readiness_gate TEXT NOT NULL,
+    paas_status TEXT NOT NULL,
+    operator TEXT DEFAULT 'Telkomcel',
     is_extreme INTEGER DEFAULT 0
 );

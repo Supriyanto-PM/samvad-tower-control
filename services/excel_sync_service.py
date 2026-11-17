@@ -48,9 +48,9 @@ class ExcelSyncService:
             ("4. The system will automatically read your updates, calculate KPI scores, and update the dashboard!", Font(size=10, bold=True, color="059669")),
             ("", Font()),
             ("TRAFFIC LIGHT STATUS CONVENTIONS:", Font(size=11, bold=True)),
-            ("🟢 GREEN = On Track / Safe / Normal", Font(size=10, color="059669")),
-            ("🟡 YELLOW = Attention / Watch List / Buffer ≤ 5 Days", Font(size=10, color="D97706")),
-            ("🔴 RED = Critical / Action Required / Buffer ≤ 2 Days", Font(size=10, color="DC2626")),
+            ("GREEN = On Track / Safe / Normal", Font(size=10, color="059669")),
+            ("YELLOW = Attention / Watch List / Buffer ≤ 5 Days", Font(size=10, color="D97706")),
+            ("RED = Critical / Action Required / Buffer ≤ 2 Days", Font(size=10, color="DC2626")),
         ]
         for row_idx, (text, font_style) in enumerate(guide_lines, 1):
             ws_guide.cell(row=row_idx, column=1, value=text).font = font_style
@@ -75,13 +75,14 @@ class ExcelSyncService:
 
         # 6. Sheet 5: Timor-Leste 100-Site National Rollout & Operational Routing from Port Dili
         df_timor = query_df("""
-            SELECT site_id, site_name, district, accessible_route_km, est_travel_time, transport_mode,
+            SELECT site_id, site_name, district, paas_status, accessible_route_km, est_travel_time, transport_mode,
                    assigned_forward_hub, deployment_zone, delivery_wave, priority_tier, readiness_gate,
                    quadrant, revenue_tier, backup_hours, has_dg, rectifier, lon, lat, notes
             FROM timor_sites_100 ORDER BY accessible_route_km ASC
         """)
         if not df_timor.empty:
             ExcelSyncService._add_data_sheet(wb, "5_Timor_100_Sites_Routing", df_timor, header_fill, header_font, thin_border)
+
 
         wb.save(output_path)
         return output_path
@@ -207,13 +208,20 @@ class ExcelSyncService:
                         site_id = str(row_dict.get("site_id", "")).strip()
                         readiness = str(row_dict.get("readiness_gate", "")).strip().upper()
                         notes = str(row_dict.get("notes", "")).strip()
+                        paas_st = str(row_dict.get("paas_status", "")).strip()
                         if site_id:
                             if readiness in ["GO", "HOLD", "ESCALATE", "RESEQUENCE"]:
                                 execute_write(
                                     "UPDATE timor_sites_100 SET readiness_gate = ?, notes = ? WHERE site_id = ?",
                                     (readiness, notes, site_id)
                                 )
-                                stats["timor_sites_updated"] = stats.get("timor_sites_updated", 0) + 1
+                            if paas_st and paas_st != "nan":
+                                execute_write(
+                                    "UPDATE timor_sites_100 SET paas_status = ? WHERE site_id = ?",
+                                    (paas_st, site_id)
+                                )
+                            stats["timor_sites_updated"] = stats.get("timor_sites_updated", 0) + 1
+
 
             # Log audit
             execute_write(

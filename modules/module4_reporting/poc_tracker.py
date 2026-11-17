@@ -37,18 +37,18 @@ class POCTracker:
                 delta_days = (target_dt - actual_dt).days
                 days_ahead_list.append(delta_days)
                 if delta_days >= self.thresholds.POC_STRETCH_TARGET_DAYS_AHEAD:
-                    stretch_eval.append("🌟 5-Day Ahead Stretch Met")
+                    stretch_eval.append("5-Day Ahead Stretch Met")
                 else:
-                    stretch_eval.append("✅ Met On Schedule")
+                    stretch_eval.append("Met On Schedule")
             else:
                 delta_days = (stretch_target_dt - today).days
                 days_ahead_list.append(delta_days)
                 if delta_days >= 0:
-                    stretch_eval.append("⚡ Ahead / On Pace for Stretch")
+                    stretch_eval.append("Ahead / On Pace for Stretch")
                 elif (target_dt - today).days >= 0:
-                    stretch_eval.append("🟡 Standard Pace (Stretch at Risk)")
+                    stretch_eval.append("Standard Pace (Stretch at Risk)")
                 else:
-                    stretch_eval.append("🔴 Lagging Behind Contract Target")
+                    stretch_eval.append("Lagging Behind Contract Target")
 
         df["days_buffer_or_ahead"] = days_ahead_list
         df["stretch_status_evaluated"] = stretch_eval

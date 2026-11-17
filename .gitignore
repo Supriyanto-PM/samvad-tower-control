@@ -1,12 +1,19 @@
-# Environments & binaries
+# Python environments & cache
 .venv/
+venv/
 bin/
 __pycache__/
 *.py[cod]
 *$py.class
 .DS_Store
 
-# Temporary scratch & database files
-*.db
+# Temporary scratch & runtime logs
 scratch/
 .system_generated/
+tunnel_url.txt
+*.tmp
+~$*
+reports/~$*
+
+# Database files (auto-seeded on startup if missing)
+*.db

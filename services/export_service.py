@@ -14,7 +14,7 @@ import pandas as pd
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image as RLImage
 
 # Excel import
 import openpyxl
@@ -48,9 +48,20 @@ class ExportService:
 
         elements = []
 
-        # Header Title
-        elements.append(Paragraph("PT SAMVAD TECHNOLOGY SERVICES", title_style))
-        elements.append(Paragraph(f"PMO Command Center (PMO-CC) — Weekly SLA & KPI Status Report | Week {week_num}, {year}", subtitle_style))
+        # Header with Logo
+        logo_path = "assets/samvad_logo_horizontal.png"
+        if os.path.exists(logo_path):
+            logo_img = RLImage(logo_path, width=130, height=28.5)
+            header_table = Table([[logo_img, Paragraph("<b>PMO COMMAND CENTER (PMO-CC)</b><br/><font size=8 color='#475569'>Weekly SLA & KPI Status Report | Week " + str(week_num) + ", " + str(year) + "</font>", subtitle_style)]], colWidths=[140, 380])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            elements.append(header_table)
+        else:
+            elements.append(Paragraph("PT SAMVAD TECHNOLOGY SERVICES", title_style))
+            elements.append(Paragraph(f"PMO Command Center (PMO-CC) — Weekly SLA & KPI Status Report | Week {week_num}, {year}", subtitle_style))
         elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#2563EB'), spaceAfter=12))
 
         # Executive Summary Box
@@ -170,8 +181,19 @@ class ExportService:
         body_style = ParagraphStyle('BodyStyle', parent=styles['Normal'], fontSize=8.5, textColor=colors.HexColor('#334155'), leading=11)
 
         elements = []
-        elements.append(Paragraph("PT SAMVAD TECHNOLOGY SERVICES", title_style))
-        elements.append(Paragraph(f"Installation & Commissioning (I&C) Acceptance Certificate & Checklist | Ref: {checklist_code}", subtitle_style))
+        logo_path = "assets/samvad_logo_horizontal.png"
+        if os.path.exists(logo_path):
+            logo_img = RLImage(logo_path, width=120, height=26.3)
+            header_table = Table([[logo_img, Paragraph(f"<b>Installation & Commissioning (I&C) Acceptance Certificate</b><br/><font size=8 color='#475569'>Ref: {checklist_code}</font>", subtitle_style)]], colWidths=[130, 390])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            elements.append(header_table)
+        else:
+            elements.append(Paragraph("PT SAMVAD TECHNOLOGY SERVICES", title_style))
+            elements.append(Paragraph(f"Installation & Commissioning (I&C) Acceptance Certificate & Checklist | Ref: {checklist_code}", subtitle_style))
         elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#059669'), spaceAfter=10))
 
         # Metadata table
@@ -290,6 +312,14 @@ class ExportService:
         filename = f"{REPORTS_DIR}/Samvad_PMO_Executive_Summary_W{week_num}_{year}.docx"
         
         doc = Document()
+        
+        # Logo if available
+        logo_path = "assets/samvad_logo_horizontal.png"
+        if os.path.exists(logo_path):
+            from docx.shared import Inches
+            p_logo = doc.add_paragraph()
+            p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p_logo.add_run().add_picture(logo_path, width=Inches(2.5))
         
         # Heading
         title = doc.add_heading("PT SAMVAD TECHNOLOGY SERVICES", level=0)
