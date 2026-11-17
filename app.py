@@ -29,7 +29,7 @@ from config.settings import (
     DOCUMENT_OWNER,
     DATABASE_PATH
 )
-from database.connection import init_db, query_df, execute_write, get_connection
+from database.connection import init_db, query_df, execute_write, get_connection, ensure_governance_schema
 from database.seed_data import seed_all_data
 from database.timor_sites_data import seed_timor_100_sites, PORT_DILI_COORDS, get_timor_100_sites_dataframe
 from database.multi_tenant_data import (
@@ -741,9 +741,12 @@ st.markdown("""
 # Bootstrap Database & Seed 100 Sites
 @st.cache_resource
 def bootstrap_all_data():
+    init_db(DATABASE_PATH)
+    ensure_governance_schema()
     seed_all_data(DATABASE_PATH)
     seed_timor_100_sites(DATABASE_PATH)
     seed_multi_tenant_sites(DATABASE_PATH)
+    ensure_governance_schema()
     ExcelSyncService.generate_master_template()
     return True
 
@@ -1175,6 +1178,19 @@ def render_noc_control_tower():
         df_view = df_all.copy()
     else:
         df_view = df_all[df_all["operator"] == current_op].copy()
+    
+    # Defensive column check to prevent KeyError across migrations
+    for col, default_val in [
+        ("blocker_reason", ""),
+        ("readiness_gate", ""),
+        ("paas_status", ""),
+        ("operator", "Telkomcel"),
+        ("assigned_team", ""),
+        ("last_updated_by", ""),
+        ("updated_at", "")
+    ]:
+        if col not in df_view.columns:
+            df_view[col] = default_val
     
     total_sites = len(df_view)
     c_shipping = len(df_view[df_view["paas_status"].str.contains("Shipping", na=False)])

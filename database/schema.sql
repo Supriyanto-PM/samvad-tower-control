@@ -200,5 +200,9 @@ CREATE TABLE IF NOT EXISTS timor_sites_100 (
     readiness_gate TEXT NOT NULL,
     paas_status TEXT NOT NULL,
     operator TEXT DEFAULT 'Telkomcel',
-    is_extreme INTEGER DEFAULT 0
+    is_extreme INTEGER DEFAULT 0,
+    assigned_team TEXT DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT NULL,
+    last_updated_by TEXT DEFAULT NULL,
+    blocker_reason TEXT DEFAULT NULL
 );

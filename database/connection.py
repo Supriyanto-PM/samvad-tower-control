@@ -159,11 +159,8 @@ def ensure_governance_schema(conn: Optional[sqlite3.Connection] = None) -> None:
                 value TEXT
             )
         """)
-        # paas_field_teams table is kept empty by default for clean real WhatsApp testing.
-        # Field teams can be registered dynamically by coordinators.
-        _GOVERNANCE_SCHEMA_INITIALIZED = True
-
-        _GOVERNANCE_SCHEMA_INITIALIZED = True
+        if existing_cols:
+            _GOVERNANCE_SCHEMA_INITIALIZED = True
     except Exception:
         pass
     finally:
@@ -199,6 +196,7 @@ def init_db(db_path: Optional[str] = None, schema_file: str = "database/schema.s
     try:
         conn.executescript(sql_script)
         conn.commit()
+        ensure_governance_schema(conn)
     finally:
         conn.close()
 
