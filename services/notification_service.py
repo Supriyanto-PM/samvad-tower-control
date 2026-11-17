@@ -9,6 +9,7 @@ import json
 import logging
 from typing import Dict, Any, Optional
 import requests
+import pandas as pd
 from database.connection import execute_write
 
 logger = logging.getLogger(__name__)
