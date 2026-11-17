@@ -10,8 +10,20 @@ Strictly icon-free enterprise typography.
 import json
 import gc
 from typing import Optional, Dict, Any
-import tornado.web
-from tornado.routing import Matcher, Rule, PathMatches
+
+try:
+    import tornado.web
+    from tornado.routing import Matcher, Rule, PathMatches
+    _RequestHandler = tornado.web.RequestHandler
+    _Matcher = Matcher
+    HAS_TORNADO = True
+except ImportError:
+    tornado = None
+    HAS_TORNADO = False
+    _RequestHandler = object
+    _Matcher = object
+    Rule = None
+    PathMatches = None
 
 from database.connection import query_df
 from services.fleet_tracking_service import FleetTrackingService
@@ -20,7 +32,7 @@ from services.fleet_tracking_service import FleetTrackingService
 import io
 import wave
 
-class SilenceAudioHandler(tornado.web.RequestHandler):
+class SilenceAudioHandler(_RequestHandler):
     """
     Serves a valid 2-second silent WAV file with Accept-Ranges and Content-Length.
     Ensures iOS WebKit and Android media sessions remain active in the background
@@ -49,7 +61,7 @@ class SilenceAudioHandler(tornado.web.RequestHandler):
         self.write(data)
 
 
-class MobileMatcher(Matcher):
+class MobileMatcher(_Matcher):
     """
     Matches requests destined for the mobile technician check-in portal:
     - /checkin
@@ -66,7 +78,7 @@ class MobileMatcher(Matcher):
         return None
 
 
-class CheckinApiHandler(tornado.web.RequestHandler):
+class CheckinApiHandler(_RequestHandler):
     """
     JSON API endpoint for mobile GPS telemetry transmission.
     Receives live coordinates and updates the PMO Radar database directly.
@@ -282,7 +294,7 @@ class CheckinApiHandler(tornado.web.RequestHandler):
         }))
 
 
-class MobileCheckinPageHandler(tornado.web.RequestHandler):
+class MobileCheckinPageHandler(_RequestHandler):
     """
     Renders a lightning-fast, native HTML5 mobile page for field crews.
     No iframe, no heavy Streamlit bundle, 100% reliable 1-tap GPS permission.
@@ -1222,6 +1234,8 @@ def attach_mobile_checkin_routes() -> bool:
     Finds running Tornado application instances in memory and prepends
     the mobile check-in portal and JSON API routes before Streamlit's fallback handler.
     """
+    if not HAS_TORNADO or tornado is None:
+        return False
     attached = False
     for obj in gc.get_objects():
         if isinstance(obj, tornado.web.Application):
