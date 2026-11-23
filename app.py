@@ -4450,6 +4450,18 @@ def render_update_tab():
                         key="btn_download_opex_model"
                     )
 
+            pptx_deck_path = os.path.join("reports", "Samvad_101_Sites_Delivery_Method_Executive_Presentation.pptx")
+            if os.path.exists(pptx_deck_path):
+                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                with open(pptx_deck_path, "rb") as f_pptx:
+                    st.download_button(
+                        "Download 101 Sites Delivery Method Executive Deck - Morph (.pptx)",
+                        data=f_pptx.read(),
+                        file_name="Samvad_101_Sites_Delivery_Method_Executive_Presentation.pptx",
+                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        key="btn_download_morph_pptx"
+                    )
+
         with sc2:
             st.markdown(
                 """
