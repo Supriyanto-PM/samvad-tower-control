@@ -395,16 +395,43 @@ class DataManagementService:
 
                 site_name = str(_get("site_name", f"Site {site_id}"))
                 district = str(_get("district", "Dili"))
-                site_type = str(_get("site_type", "Macro Tower"))
-                rectifier = str(_get("rectifier", "HARIF"))
+                site_type = str(_get("site_type", "End Site"))
+                rectifier = str(_get("rectifier", _get("existing_rectifier", "HARIF")))
+                power_status = str(_get("power_status", "No backup (grid only)"))
+                genset_avail = str(_get("genset_avail", _get("genset_available?", _get("genset_available", "No Genset"))))
                 try:
-                    backup_hours = float(_get("backup_hours", 2.0))
+                    load_dc_a = float(_get("load_dc_a", _get("load_dc_(a)", 0.0)))
+                except Exception:
+                    load_dc_a = 0.0
+                try:
+                    load_dc_kw = float(_get("load_dc_kw", _get("load_dc_(kw)", 0.0)))
+                except Exception:
+                    load_dc_kw = 0.0
+                try:
+                    energy_kwh_day = float(_get("energy_kwh_day", _get("energy_(kwh/day)", 0.0)))
+                except Exception:
+                    energy_kwh_day = 0.0
+                position = str(_get("position", "OUTDOOR")).strip().upper()
+                try:
+                    load_ac_recti_kw = float(_get("load_ac_recti_kw", _get("load_ac_recti_(kw)", 0.0)))
+                except Exception:
+                    load_ac_recti_kw = 0.0
+                try:
+                    load_ac_total_kw = float(_get("load_ac_total_kw", _get("load_ac_total_(kw)", 0.0)))
+                except Exception:
+                    load_ac_total_kw = 0.0
+                try:
+                    load_ac_kva = float(_get("load_ac_kva", _get("load_ac_(kva)", 0.0)))
+                except Exception:
+                    load_ac_kva = 0.0
+                try:
+                    backup_hours = float(_get("backup_hours", 2.0 if "Genset" in genset_avail else 0.0))
                 except Exception:
                     backup_hours = 2.0
                 revenue_tier = str(_get("revenue_tier", "Gold"))
                 quadrant = str(_get("quadrant", "Q1-Critical"))
-                has_dg = str(_get("has_dg", "No DG"))
-                program = str(_get("program", "PaaS Rollout"))
+                has_dg = str(_get("has_dg", "DG" if genset_avail == "With Genset" else "No DG"))
+                program = str(_get("program", "Samvad"))
                 try:
                     lon = float(_get("lon", 125.5736))
                     lat = float(_get("lat", -8.5568))
@@ -439,14 +466,20 @@ class DataManagementService:
                             notes = ?, accessible_route_km = ?, transport_mode = ?, est_travel_time = ?,
                             assigned_forward_hub = ?, deployment_zone = ?, delivery_wave = ?,
                             priority_index = ?, priority_tier = ?, readiness_gate = ?, paas_status = ?,
-                            operator = ?, is_extreme = ?, updated_at = ?, last_updated_by = 'Clean File Import'
+                            operator = ?, is_extreme = ?, power_status = ?, genset_avail = ?,
+                            load_dc_a = ?, load_dc_kw = ?, energy_kwh_day = ?, position = ?,
+                            load_ac_recti_kw = ?, load_ac_total_kw = ?, load_ac_kva = ?,
+                            updated_at = ?, last_updated_by = 'Clean File Import'
                         WHERE site_id = ?
                     """, (
                         site_name, district, site_type, rectifier, backup_hours,
                         revenue_tier, quadrant, has_dg, program, lon, lat,
                         notes, route_km, transport_mode, est_time,
                         hub, zone, wave, p_idx, p_tier, readiness, paas_st,
-                        op, is_ext, now_iso, site_id
+                        op, is_ext, power_status, genset_avail,
+                        load_dc_a, load_dc_kw, energy_kwh_day, position,
+                        load_ac_recti_kw, load_ac_total_kw, load_ac_kva,
+                        now_iso, site_id
                     ))
                     stats["updated"] += 1
                 else:
@@ -457,6 +490,8 @@ class DataManagementService:
                             haversine_distance_km, accessible_route_km, transport_mode, est_travel_time,
                             assigned_forward_hub, deployment_zone, delivery_wave, priority_index,
                             priority_tier, readiness_gate, paas_status, operator, is_extreme,
+                            power_status, genset_avail, load_dc_a, load_dc_kw, energy_kwh_day,
+                            position, load_ac_recti_kw, load_ac_total_kw, load_ac_kva,
                             updated_at, last_updated_by
                         ) VALUES (
                             ?, ?, ?, ?, ?, ?, ?,
@@ -464,6 +499,8 @@ class DataManagementService:
                             ?, ?, ?, ?,
                             ?, ?, ?, ?,
                             ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?,
                             ?, ?
                         )
                     """, (
@@ -472,6 +509,8 @@ class DataManagementService:
                         route_km * 0.8, route_km, transport_mode, est_time,
                         hub, zone, wave, p_idx,
                         p_tier, readiness, paas_st, op, is_ext,
+                        power_status, genset_avail, load_dc_a, load_dc_kw, energy_kwh_day,
+                        position, load_ac_recti_kw, load_ac_total_kw, load_ac_kva,
                         now_iso, 'Clean File Import'
                     ))
                     existing_site_ids.add(site_id)

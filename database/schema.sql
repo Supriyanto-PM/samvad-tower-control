@@ -204,5 +204,14 @@ CREATE TABLE IF NOT EXISTS timor_sites_100 (
     assigned_team TEXT DEFAULT NULL,
     updated_at TIMESTAMP DEFAULT NULL,
     last_updated_by TEXT DEFAULT NULL,
-    blocker_reason TEXT DEFAULT NULL
+    blocker_reason TEXT DEFAULT NULL,
+    power_status TEXT DEFAULT 'No backup (grid only)',
+    genset_avail TEXT DEFAULT 'No Genset',
+    load_dc_a REAL DEFAULT 0.0,
+    load_dc_kw REAL DEFAULT 0.0,
+    energy_kwh_day REAL DEFAULT 0.0,
+    position TEXT DEFAULT 'OUTDOOR',
+    load_ac_recti_kw REAL DEFAULT 0.0,
+    load_ac_total_kw REAL DEFAULT 0.0,
+    load_ac_kva REAL DEFAULT 0.0
 );

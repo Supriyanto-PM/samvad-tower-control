@@ -1,11 +1,11 @@
 """
 Multi-Tenant Portfolio Dataset & Seeding Engine.
 Provides realistic operational datasets for regional telecom operators:
-- Telkomcel: 100 sites strictly in Timor-Leste (baseline seeded via timor_sites_data.py)
+- Telkomcel: 101 sites strictly in Timor-Leste (baseline seeded via timor_sites_data.py)
 - XLSmart: 25 sites in Sumatera Utara & Aceh (Origin: Pelabuhan Belawan, Medan)
 - Mitratel: 35 macro sites in Jawa Timur & Jawa Tengah (Origin: Pelabuhan Tanjung Perak, Surabaya)
 - IOH (Indosat Ooredoo Hutchison): 20 sites in Kalimantan & IKN (Origin: Pelabuhan Semayang, Balikpapan)
-Total: 180 sites forming the unified enterprise PMO Command Center.
+Total: 181 sites forming the unified enterprise PMO Command Center.
 """
 from typing import List, Dict, Any
 import math

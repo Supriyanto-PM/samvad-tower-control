@@ -27,11 +27,45 @@ def ensure_governance_schema(conn: Optional[sqlite3.Connection] = None) -> None:
                 ("assigned_team", "TEXT DEFAULT NULL"),
                 ("updated_at", "TEXT DEFAULT NULL"),
                 ("last_updated_by", "TEXT DEFAULT NULL"),
-                ("blocker_reason", "TEXT DEFAULT NULL")
+                ("blocker_reason", "TEXT DEFAULT NULL"),
+                ("power_status", "TEXT DEFAULT 'No backup (grid only)'"),
+                ("genset_avail", "TEXT DEFAULT 'No Genset'"),
+                ("load_dc_a", "REAL DEFAULT 0.0"),
+                ("load_dc_kw", "REAL DEFAULT 0.0"),
+                ("energy_kwh_day", "REAL DEFAULT 0.0"),
+                ("position", "TEXT DEFAULT 'OUTDOOR'"),
+                ("load_ac_recti_kw", "REAL DEFAULT 0.0"),
+                ("load_ac_total_kw", "REAL DEFAULT 0.0"),
+                ("load_ac_kva", "REAL DEFAULT 0.0")
             ]
             for col_name, col_def in columns_to_add:
                 if col_name not in existing_cols:
                     cur.execute(f"ALTER TABLE timor_sites_100 ADD COLUMN {col_name} {col_def}")
+
+            # Auto-migrate from legacy 100-site dataset to Samvad_101_Site_Load_Final (101 sites)
+            cur.execute("SELECT COUNT(*) FROM timor_sites_100 WHERE site_id = 'DAX003'")
+            has_legacy_site = cur.fetchone()[0] > 0
+            cur.execute("SELECT COUNT(*) FROM timor_sites_100 WHERE operator = 'Telkomcel' AND (load_dc_kw IS NULL OR load_dc_kw = 0)")
+            missing_load_data = cur.fetchone()[0] > 50
+            if has_legacy_site or missing_load_data:
+                cur.execute("DELETE FROM timor_sites_100 WHERE operator = 'Telkomcel'")
+                conn.commit()
+                from database.timor_sites_data import get_timor_100_sites_dataframe
+                df_101 = get_timor_100_sites_dataframe()
+                cols_101 = [
+                    "no", "site_id", "site_name", "district", "site_type", "rectifier", "backup_hours",
+                    "revenue_tier", "quadrant", "has_dg", "program", "lon", "lat", "notes",
+                    "haversine_distance_km", "accessible_route_km", "transport_mode", "est_travel_time",
+                    "assigned_forward_hub", "deployment_zone", "delivery_wave", "priority_index",
+                    "priority_tier", "readiness_gate", "paas_status", "operator", "is_extreme",
+                    "power_status", "genset_avail", "load_dc_a", "load_dc_kw", "energy_kwh_day",
+                    "position", "load_ac_recti_kw", "load_ac_total_kw", "load_ac_kva"
+                ]
+                placeholders_101 = ", ".join(["?"] * len(cols_101))
+                sql_101 = f"INSERT OR REPLACE INTO timor_sites_100 ({', '.join(cols_101)}) VALUES ({placeholders_101})"
+                rows_101 = [tuple(r[c] for c in cols_101) for _, r in df_101.iterrows()]
+                cur.executemany(sql_101, rows_101)
+                conn.commit()
             
             # PaaS Rollout Scope Migration:
             # PaaS provider does not do civil construction. Civil status is removed.

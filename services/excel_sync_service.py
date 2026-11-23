@@ -73,11 +73,13 @@ class ExcelSyncService:
         df_poc = query_df("SELECT poc_code, client_name, milestone_name, target_deadline, stretch_target_deadline, actual_completion_date, status, lead_presales_engineer FROM poc_milestones")
         ExcelSyncService._add_data_sheet(wb, "4_POC_Presales", df_poc, header_fill, header_font, thin_border)
 
-        # 6. Sheet 5: Timor-Leste 100-Site National Rollout & Operational Routing from Port Dili
+        # 6. Sheet 5: Timor-Leste 101-Site National Rollout & Operational Routing from Port Dili
         df_timor = query_df("""
-            SELECT site_id, site_name, district, paas_status, accessible_route_km, est_travel_time, transport_mode,
+            SELECT site_id, site_name, district, site_type, rectifier, power_status, genset_avail,
+                   load_dc_a, load_dc_kw, energy_kwh_day, position, load_ac_recti_kw, load_ac_total_kw, load_ac_kva,
+                   paas_status, accessible_route_km, est_travel_time, transport_mode,
                    assigned_forward_hub, deployment_zone, delivery_wave, priority_tier, readiness_gate,
-                   quadrant, revenue_tier, backup_hours, has_dg, rectifier, lon, lat, notes
+                   quadrant, revenue_tier, backup_hours, has_dg, lon, lat, notes
             FROM timor_sites_100 ORDER BY accessible_route_km ASC
         """)
         if not df_timor.empty:

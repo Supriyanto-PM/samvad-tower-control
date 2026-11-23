@@ -1187,7 +1187,17 @@ def render_noc_control_tower():
         ("operator", "Telkomcel"),
         ("assigned_team", ""),
         ("last_updated_by", ""),
-        ("updated_at", "")
+        ("updated_at", ""),
+        ("site_type", "End Site"),
+        ("power_status", "No backup (grid only)"),
+        ("genset_avail", "No Genset"),
+        ("load_dc_a", 0.0),
+        ("load_dc_kw", 0.0),
+        ("energy_kwh_day", 0.0),
+        ("position", "OUTDOOR"),
+        ("load_ac_recti_kw", 0.0),
+        ("load_ac_total_kw", 0.0),
+        ("load_ac_kva", 0.0)
     ]:
         if col not in df_view.columns:
             df_view[col] = default_val
@@ -1228,7 +1238,7 @@ def render_noc_control_tower():
         badge_txt = f"Portfolio: {total_sites} Sites &bull; KPI: {live_score:.1f}%"
         bg, fg, bd = "#ECFDF5", "#065F46", "#A7F3D0"
     elif current_op == "Telkomcel":
-        crumb = 'Overview &nbsp;&rsaquo;&nbsp; NOC Views &nbsp;&rsaquo;&nbsp; <b style="color: #0F172A;">Telkomcel</b> &nbsp;&rsaquo;&nbsp; <b>Timor-Leste 100-Site PaaS Delivery Blueprint</b>'
+        crumb = 'Overview &nbsp;&rsaquo;&nbsp; NOC Views &nbsp;&rsaquo;&nbsp; <b style="color: #0F172A;">Telkomcel</b> &nbsp;&rsaquo;&nbsp; <b>Timor-Leste 101-Site PaaS Delivery Blueprint</b>'
         badge_txt = f"KPI: {live_score:.1f}% &bull; {live_tier}"
         bg, fg, bd = "#ECFDF5", "#065F46", "#A7F3D0"
     elif current_op == "XLSmart":
@@ -1945,15 +1955,17 @@ def render_noc_control_tower():
 
     if selected_operator == "All":
         display_cols = [
-            "operator", "site_id", "site_name", "district", "paas_status", "readiness_gate",
-            "accessible_route_km", "est_travel_time", "transport_mode", "assigned_forward_hub",
-            "rectifier", "has_dg", "backup_hours", "notes"
+            "operator", "site_id", "site_name", "district", "site_type", "position",
+            "paas_status", "readiness_gate", "rectifier", "power_status", "genset_avail",
+            "load_dc_kw", "load_ac_total_kw", "load_ac_kva", "energy_kwh_day",
+            "accessible_route_km", "est_travel_time", "transport_mode", "assigned_forward_hub", "notes"
         ]
     else:
         display_cols = [
-            "site_id", "site_name", "district", "paas_status", "readiness_gate",
-            "accessible_route_km", "est_travel_time", "transport_mode", "assigned_forward_hub",
-            "rectifier", "has_dg", "backup_hours", "notes"
+            "site_id", "site_name", "district", "site_type", "position",
+            "paas_status", "readiness_gate", "rectifier", "power_status", "genset_avail",
+            "load_dc_kw", "load_ac_total_kw", "load_ac_kva", "energy_kwh_day",
+            "accessible_route_km", "est_travel_time", "transport_mode", "assigned_forward_hub", "notes"
         ]
 
     # Operator-tailored status options for clean dropdown selection
@@ -2047,9 +2059,21 @@ def render_noc_control_tower():
             "Route Dist.",
             format="%.1f km"
         ),
-        "backup_hours": st.column_config.NumberColumn(
-            "Backup",
-            format="%.1f h"
+        "load_dc_kw": st.column_config.NumberColumn(
+            "Load DC",
+            format="%.2f kW"
+        ),
+        "load_ac_total_kw": st.column_config.NumberColumn(
+            "Load AC",
+            format="%.2f kW"
+        ),
+        "load_ac_kva": st.column_config.NumberColumn(
+            "Load kVA",
+            format="%.2f kVA"
+        ),
+        "energy_kwh_day": st.column_config.NumberColumn(
+            "Energy/Day",
+            format="%.1f kWh"
         )
     }
 
@@ -4268,7 +4292,7 @@ def render_data_cleaning_panel():
             <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-left: 4px solid #16A34A; border-radius: 8px; padding: 14px;">
                 <div style="font-weight: 700; font-size: 0.88rem; color: #166534;">Restore Factory Baseline</div>
                 <div style="font-size: 0.77rem; color: #14532D; margin: 4px 0 10px 0;">
-                    Re-seeds the entire 180-site dataset (100 Timor-Leste + 80 multi-tenant regional sites) and default field crews.
+                    Re-seeds the entire 181-site dataset (101 Timor-Leste + 80 multi-tenant regional sites) and default field crews.
                 </div>
             </div>
             """,
@@ -4277,7 +4301,7 @@ def render_data_cleaning_panel():
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         with st.popover("Restore Factory Baseline", use_container_width=True):
             st.markdown("<div style='font-size: 0.85rem; font-weight: 700; color: #0F172A;'>Confirm Baseline Reset</div>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size: 0.78rem; color: #475569; margin: 6px 0 12px 0;'>This will replace current site data with the original 180-site factory baseline.</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 0.78rem; color: #475569; margin: 6px 0 12px 0;'>This will replace current site data with the original 181-site factory baseline.</div>", unsafe_allow_html=True)
             if st.button("Confirm and Restore", type="primary", use_container_width=True, key="btn_exec_restore"):
                 ok, msg, aff = DataManagementService.restore_factory_baseline()
                 if ok:
@@ -4362,19 +4386,31 @@ def render_update_tab():
                 st.download_button(
                     "Download Samvad_Master_Tracker.xlsx",
                     data=f_excel.read(),
-                    file_name="Samvad_Master_Tracker_100Sites.xlsx",
+                    file_name="Samvad_Master_Tracker_101Sites.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     type="primary"
                 )
+
+            load_excel_path = os.path.join("reports", "Samvad_101_Site_Load_Final.xlsx")
+            if os.path.exists(load_excel_path):
+                st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+                with open(load_excel_path, "rb") as f_load:
+                    st.download_button(
+                        "Download 101 Sites DC/AC Electrical Load Final (.xlsx)",
+                        data=f_load.read(),
+                        file_name="Samvad_101_Site_Load_Final.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="btn_download_101_load_final"
+                    )
             
             fuel_excel_path = os.path.join("reports", "Timor_Leste_100_Sites_Zone_Distance_Fuel_Analysis.xlsx")
             if os.path.exists(fuel_excel_path):
                 st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
                 with open(fuel_excel_path, "rb") as f_fuel:
                     st.download_button(
-                        "Download 100 Sites Zone Distance & Fuel Analysis (.xlsx)",
+                        "Download 101 Sites Zone Distance & Fuel Analysis (.xlsx)",
                         data=f_fuel.read(),
-                        file_name="Timor_Leste_100_Sites_Zone_Distance_Fuel_Analysis.xlsx",
+                        file_name="Timor_Leste_101_Sites_Zone_Distance_Fuel_Analysis.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key="btn_download_fuel_analysis"
                     )
@@ -4384,9 +4420,9 @@ def render_update_tab():
                 st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
                 with open(opex_excel_path, "rb") as f_opex:
                     st.download_button(
-                        "Download 100 Sites Rollout OPEX Model (.xlsx)",
+                        "Download 101 Sites Rollout OPEX Model (.xlsx)",
                         data=f_opex.read(),
-                        file_name="Timor_Leste_100_Sites_OPEX_Model.xlsx",
+                        file_name="Timor_Leste_101_Sites_OPEX_Model.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key="btn_download_opex_model"
                     )
@@ -4427,7 +4463,7 @@ def render_update_tab():
 
     with tab_action:
         st.subheader("Quick Field Action & PaaS Status Toggles")
-        df_sites = query_df("SELECT site_id, site_name, readiness_gate, paas_status, district FROM timor_sites_100 LIMIT 100")
+        df_sites = query_df("SELECT site_id, site_name, readiness_gate, paas_status, district FROM timor_sites_100 ORDER BY no")
         opts = [f"{r['site_id']} - {r['site_name']} ({r['district']}) [{r['paas_status']}] [Gate: {r['readiness_gate']}]" for _, r in df_sites.iterrows()]
         
         chosen = st.selectbox("Select Site to Update:", opts)

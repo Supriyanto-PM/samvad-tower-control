@@ -16,7 +16,7 @@ class TestDataManagementService(unittest.TestCase):
 
     def test_database_summary(self):
         summary = DataManagementService.get_database_summary()
-        self.assertGreaterEqual(summary["total_sites"], 100)
+        self.assertGreaterEqual(summary["total_sites"], 101)
         self.assertIn("Telkomcel", summary["sites_by_operator"])
 
     def test_reset_all_site_statuses(self):
@@ -25,7 +25,7 @@ class TestDataManagementService(unittest.TestCase):
             operator="Telkomcel"
         )
         self.assertTrue(ok)
-        self.assertEqual(affected, 100)
+        self.assertEqual(affected, 101)
 
         df = query_df("SELECT DISTINCT paas_status FROM timor_sites_100 WHERE operator = 'Telkomcel'")
         self.assertEqual(list(df["paas_status"]), ["Shipping & Customs"])
