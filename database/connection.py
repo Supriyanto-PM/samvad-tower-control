@@ -7,12 +7,12 @@ from typing import List, Dict, Any, Optional
 import pandas as pd
 from config.settings import DATABASE_PATH
 
-_GOVERNANCE_SCHEMA_INITIALIZED = False
+_GOVERNANCE_SCHEMA_INITIALIZED = None
 
 def ensure_governance_schema(conn: Optional[sqlite3.Connection] = None) -> None:
-    """Ensures governance audit and team assignment columns exist on timor_sites_100."""
+    """Ensures governance audit, team assignment, and 101-site electrical load columns exist on timor_sites_100."""
     global _GOVERNANCE_SCHEMA_INITIALIZED
-    if _GOVERNANCE_SCHEMA_INITIALIZED:
+    if _GOVERNANCE_SCHEMA_INITIALIZED == "v101_site_load_final":
         return
     should_close = False
     if conn is None:
@@ -194,7 +194,9 @@ def ensure_governance_schema(conn: Optional[sqlite3.Connection] = None) -> None:
             )
         """)
         if existing_cols:
-            _GOVERNANCE_SCHEMA_INITIALIZED = True
+            cur.execute("SELECT COUNT(*) FROM timor_sites_100 WHERE operator = 'Telkomcel'")
+            if cur.fetchone()[0] >= 101:
+                _GOVERNANCE_SCHEMA_INITIALIZED = "v101_site_load_final"
     except Exception:
         pass
     finally:

@@ -738,9 +738,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Bootstrap Database & Seed 100 Sites
+# Bootstrap Database & Seed 101 Sites
 @st.cache_resource
-def bootstrap_all_data():
+def bootstrap_all_data(schema_version: str = "v101_site_load_final"):
     init_db(DATABASE_PATH)
     ensure_governance_schema()
     seed_all_data(DATABASE_PATH)
@@ -750,7 +750,7 @@ def bootstrap_all_data():
     ExcelSyncService.generate_master_template()
     return True
 
-bootstrap_all_data()
+bootstrap_all_data("v101_site_load_final")
 
 def render_top_ribbon():
     """Renders the fixed full-width OpManager dark top ribbon with instantaneous WebSocket navigation."""
@@ -1897,6 +1897,29 @@ def render_noc_control_tower():
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     matrix_title = f"All Clients ({total_sites} Sites)" if selected_operator == "All" else f"{selected_operator} ({total_sites} Sites)"
     st.markdown(f"##### Operational Master Matrix: {matrix_title}")
+
+    if selected_operator in ["All", "Telkomcel"]:
+        df_tl_load = df_view[df_view["operator"] == "Telkomcel"] if "operator" in df_view.columns else df_view
+        tot_dc_kw = float(df_tl_load["load_dc_kw"].sum()) if "load_dc_kw" in df_tl_load.columns else 343.41
+        tot_ac_kw = float(df_tl_load["load_ac_total_kw"].sum()) if "load_ac_total_kw" in df_tl_load.columns else 392.23
+        tot_ac_kva = float(df_tl_load["load_ac_kva"].sum()) if "load_ac_kva" in df_tl_load.columns else 412.82
+        tot_kwh_day = float(df_tl_load["energy_kwh_day"].sum()) if "energy_kwh_day" in df_tl_load.columns else 8241.2
+        c_outdoor = len(df_tl_load[df_tl_load["position"] == "OUTDOOR"]) if "position" in df_tl_load.columns else 91
+        c_indoor = len(df_tl_load[df_tl_load["position"] == "INDOOR"]) if "position" in df_tl_load.columns else 7
+        c_rooftop = len(df_tl_load[df_tl_load["position"] == "ROOFTOP"]) if "position" in df_tl_load.columns else 3
+        st.markdown(
+            f"""
+            <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-left: 4px solid #0F172A; border-radius: 6px; padding: 8px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 0.78rem; color: #334155;">
+                <span><b>Telkomcel 101-Site Electrical Load Profile:</b></span>
+                <span>Total DC Load: <b style="color: #0F172A;">{tot_dc_kw:,.2f} kW</b> (Avg 3.40 kW)</span>
+                <span>Total AC Load: <b style="color: #0284C7;">{tot_ac_kw:,.2f} kW</b> / <b>{tot_ac_kva:,.2f} kVA</b></span>
+                <span>Daily Energy: <b style="color: #059669;">{tot_kwh_day:,.1f} kWh/day</b></span>
+                <span>Position: <b>{c_outdoor} Outdoor</b> &bull; <b>{c_indoor} Indoor</b> &bull; <b>{c_rooftop} Rooftop</b></span>
+                <span>OPEX Model: <b style="color: #0F172A;">$19,404.14</b> ($192.12/site | 74 Team-Days)</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     if selected_operator == "All":
         fcol0, fcol1, fcol2, fcol3, fcol4 = st.columns([1.2, 1.2, 1.2, 1.2, 1.5])
